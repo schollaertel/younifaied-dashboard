@@ -3,82 +3,153 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
-import { CheckCircle, XCircle, Eye, Edit, Clock, Image as ImageIcon } from 'lucide-react'
+import { CheckCircle, XCircle, Eye, Edit, Clock, Image as ImageIcon, RefreshCw } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
 
 export function ContentReview() {
   const [pendingContent, setPendingContent] = useState([])
   const [selectedContent, setSelectedContent] = useState(null)
   const [editMode, setEditMode] = useState(false)
   const [editedText, setEditedText] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [actionLoading, setActionLoading] = useState(null)
 
-  // Mock data - replace with Supabase integration
-  useEffect(() => {
-    const mockContent = [
-      {
-        id: 1,
-        topic: 'Using AI to catch student effort instead of just errors',
-        platform: 'facebook',
-        persona: 'Expert Coach',
-        content_text: 'As educators, we often focus on what students get wrong. But what if AI could help us see what they\'re getting right? When we shift from catching errors to catching effort, we unlock a powerful tool for authentic growth. AI can reveal patterns in student work that show persistence, creative thinking, and genuine understanding - even when the final answer isn\'t perfect. This isn\'t about lowering standards; it\'s about raising our awareness of the learning process itself.',
-        hashtags: '#EducationInnovation #AIinEducation #StudentGrowth #TeachingWithAI',
-        cta: 'How do you recognize effort in your classroom? Share your strategies below!',
-        generated_image_url: 'https://example.com/image1.jpg',
-        created_at: '2025-06-23T10:30:00Z',
-        approval_status: 'pending_approval'
-      },
-      {
-        id: 2,
-        topic: 'Academic integrity in the AI age',
-        platform: 'linkedin',
-        persona: 'The Challenger',
-        content_text: 'Academic integrity isn\'t dead in the AI age - it\'s evolving. Instead of banning AI tools, we need to teach students how to use them ethically and effectively. This means redefining what original work looks like and helping students understand the difference between AI as a collaborator versus AI as a replacement for thinking. The goal isn\'t to eliminate AI from education; it\'s to ensure students develop critical thinking skills alongside technological literacy.',
-        hashtags: '#AcademicIntegrity #AIEthics #EducationReform #FutureOfLearning',
-        cta: 'What\'s your take on AI and academic integrity? Let\'s discuss in the comments.',
-        generated_image_url: 'https://example.com/image2.jpg',
-        created_at: '2025-06-23T09:15:00Z',
-        approval_status: 'pending_approval'
-      },
-      {
-        id: 3,
-        topic: 'Personalized learning without the buzzwords',
-        platform: 'instagram',
-        persona: 'Relatable Mom',
-        content_text: 'Personalized learning sounds fancy, but here\'s the real talk: it\'s just good teaching with better tools. It\'s knowing that Sarah learns best with visual examples while Marcus needs to talk through problems. AI can help us track these patterns and suggest resources, but it can\'t replace the human connection that makes learning stick. Sometimes the most "personalized" thing you can do is simply notice when a student lights up about something and lean into that curiosity.',
-        hashtags: '#PersonalizedLearning #TeachingReality #EducationTech #RealTalk',
-        cta: 'What makes learning click for your students? Drop a comment! 👇',
-        generated_image_url: 'https://example.com/image3.jpg',
-        created_at: '2025-06-23T08:45:00Z',
-        approval_status: 'pending_approval'
+  // Fetch pending content from Supabase
+  const fetchPendingContent = async () => {
+    setLoading(true)
+    try {
+      const { data, error } = await supabase
+        .from('generated_content')
+        .select('*')
+        .eq('approval_status', 'pending_approval')
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Error fetching content:', error)
+      } else {
+        setPendingContent(data || [])
       }
-    ]
-    setPendingContent(mockContent)
+    } catch (error) {
+      console.error('Error:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchPendingContent()
   }, [])
 
   const handleApprove = async (contentId) => {
-    // TODO: Update Supabase
-    setPendingContent(prev => prev.filter(item => item.id !== contentId))
-    setSelectedContent(null)
-    console.log('Approved content:', contentId)
+    setActionLoading(contentId)
+    try {
+      const { error } = await supabase
+        .from('generated_content')
+        .update({ 
+          approval_status: 'approved',
+          approved_at: new Date().toISOString(),
+          approved_by: 'user' // You could add user authentication later
+        })
+        .eq('id', contentId)
+
+      if (error) {
+        console.error('Error approving content:', error)
+        alert('Error approving content. Please try again.')
+      } else {
+        // Remove from pending list
+        setPendingContent(prev => prev.filter(item => item.id !== contentId))
+        if (selectedContent?.id === contentId) {
+          setSelectedContent(null)
+        }
+      }
+    } catch (error) {
+      console.error('Error:', error)
+      alert('Error approving content. Please try again.')
+    } finally {
+      setActionLoading(null)
+    }
   }
 
   const handleReject = async (contentId) => {
-    // TODO: Update Supabase
-    setPendingContent(prev => prev.filter(item => item.id !== contentId))
-    setSelectedContent(null)
-    console.log('Rejected content:', contentId)
+    setActionLoading(contentId)
+    try {
+      const { error } = await supabase
+        .from('generated_content')
+        .update({ 
+          approval_status: 'rejected',
+          approved_at: new Date().toISOString(),
+          approved_by: 'user'
+        })
+        .eq('id', contentId)
+
+      if (error) {
+        console.error('Error rejecting content:', error)
+        alert('Error rejecting content. Please try again.')
+      } else {
+        // Remove from pending list
+        setPendingContent(prev => prev.filter(item => item.id !== contentId))
+        if (selectedContent?.id === contentId) {
+          setSelectedContent(null)
+        }
+      }
+    } catch (error) {
+      console.error('Error:', error)
+      alert('Error rejecting content. Please try again.')
+    } finally {
+      setActionLoading(null)
+    }
   }
 
-  const handleEdit = (content) => {
-    setSelectedContent(content)
-    setEditedText(content.content_text)
+  const handleEdit = async () => {
+    if (!selectedContent) return
+    
+    setActionLoading(selectedContent.id)
+    try {
+      const { error } = await supabase
+        .from('generated_content')
+        .update({ content_text: editedText })
+        .eq('id', selectedContent.id)
+
+      if (error) {
+        console.error('Error updating content:', error)
+        alert('Error updating content. Please try again.')
+      } else {
+        // Update local state
+        setSelectedContent(prev => ({ ...prev, content_text: editedText }))
+        setPendingContent(prev => 
+          prev.map(item => 
+            item.id === selectedContent.id 
+              ? { ...item, content_text: editedText }
+              : item
+          )
+        )
+        setEditMode(false)
+      }
+    } catch (error) {
+      console.error('Error:', error)
+      alert('Error updating content. Please try again.')
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  const startEdit = () => {
+    setEditedText(selectedContent?.content_text || '')
     setEditMode(true)
   }
 
-  const handleSaveEdit = async () => {
-    // TODO: Update Supabase with edited content
-    setSelectedContent(prev => ({ ...prev, content_text: editedText }))
+  const cancelEdit = () => {
     setEditMode(false)
-    console.log('Saved edited content')
+    setEditedText('')
+  }
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
   }
 
   const getPlatformColor = (platform) => {
@@ -93,211 +164,218 @@ export function ContentReview() {
 
   const getPersonaColor = (persona) => {
     const colors = {
-      'Expert Coach': 'bg-green-500',
-      'Relatable Mom': 'bg-purple-500',
-      'The Challenger': 'bg-orange-500'
+      'expert-coach': 'bg-green-100 text-green-800',
+      'relatable-mom': 'bg-purple-100 text-purple-800',
+      'challenger': 'bg-orange-100 text-orange-800'
     }
-    return colors[persona] || 'bg-gray-500'
+    return colors[persona] || 'bg-gray-100 text-gray-800'
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+          <p className="text-muted-foreground">Loading pending content...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold younifaied-text-gradient mb-2">
-          Review Content
-        </h1>
-        <p className="text-muted-foreground">
-          Review and approve generated content before publishing
-        </p>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold younifaied-text-gradient mb-2">
+            Review Content
+          </h1>
+          <p className="text-muted-foreground">
+            Review and approve generated content before publishing
+          </p>
+        </div>
+        <Button 
+          onClick={fetchPendingContent}
+          variant="outline"
+          size="sm"
+          disabled={loading}
+        >
+          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Content List */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold">Pending Approval ({pendingContent.length})</h2>
-          
-          {pendingContent.map((content) => (
-            <Card 
-              key={content.id} 
-              className={`cursor-pointer transition-all ${
-                selectedContent?.id === content.id ? 'ring-2 ring-primary' : ''
-              }`}
-              onClick={() => setSelectedContent(content)}
-            >
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <CardTitle className="text-base line-clamp-2">
-                      {content.topic}
-                    </CardTitle>
-                    <div className="flex items-center space-x-2 mt-2">
-                      <Badge className={`${getPlatformColor(content.platform)} text-white`}>
-                        {content.platform}
-                      </Badge>
-                      <Badge variant="outline" className={`${getPersonaColor(content.persona)} text-white`}>
-                        {content.persona}
-                      </Badge>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-1 text-muted-foreground">
-                    <Clock className="h-4 w-4" />
-                    <span className="text-xs">
-                      {new Date(content.created_at).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <p className="text-sm text-muted-foreground line-clamp-3">
-                  {content.content_text}
-                </p>
-                <div className="flex items-center justify-between mt-3">
-                  <div className="flex items-center space-x-1 text-muted-foreground">
-                    <ImageIcon className="h-4 w-4" />
-                    <span className="text-xs">Image generated</span>
-                  </div>
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setSelectedContent(content)
-                    }}
-                  >
-                    <Eye className="h-4 w-4 mr-1" />
-                    Review
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-
-          {pendingContent.length === 0 && (
-            <Card>
-              <CardContent className="text-center py-8">
-                <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">All caught up!</h3>
-                <p className="text-muted-foreground">
-                  No content pending approval at the moment.
-                </p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-
-        {/* Content Preview */}
-        <div className="lg:sticky lg:top-6">
-          {selectedContent ? (
-            <Card>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="text-lg">{selectedContent.topic}</CardTitle>
-                    <div className="flex items-center space-x-2 mt-2">
-                      <Badge className={`${getPlatformColor(selectedContent.platform)} text-white`}>
-                        {selectedContent.platform}
-                      </Badge>
-                      <Badge variant="outline" className={`${getPersonaColor(selectedContent.persona)} text-white`}>
-                        {selectedContent.persona}
+      {pendingContent.length === 0 ? (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold mb-2">All caught up!</h3>
+            <p className="text-muted-foreground">
+              No pending content to review. New content will appear here when generated.
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Content List */}
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold">Pending Approval ({pendingContent.length})</h2>
+            {pendingContent.map((content) => (
+              <Card 
+                key={content.id} 
+                className={`cursor-pointer transition-all hover:shadow-md ${
+                  selectedContent?.id === content.id ? 'ring-2 ring-primary' : ''
+                }`}
+                onClick={() => setSelectedContent(content)}
+              >
+                <CardContent className="p-4">
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex items-center space-x-2">
+                      <div className={`w-3 h-3 rounded-full ${getPlatformColor(content.platform)}`} />
+                      <span className="font-medium capitalize">{content.platform}</span>
+                      <Badge variant="secondary" className={getPersonaColor(content.persona)}>
+                        {content.persona?.replace('-', ' ') || 'Unknown'}
                       </Badge>
                     </div>
+                    <div className="flex items-center text-xs text-muted-foreground">
+                      <Clock className="h-3 w-3 mr-1" />
+                      {formatDate(content.created_at)}
+                    </div>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleEdit(selectedContent)}
-                  >
-                    <Edit className="h-4 w-4 mr-1" />
-                    Edit
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Generated Image Preview */}
-                <div className="bg-muted rounded-lg p-4 text-center">
-                  <ImageIcon className="h-16 w-16 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">Generated Image Preview</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {selectedContent.generated_image_url}
+                  
+                  <h3 className="font-medium mb-2 line-clamp-2">
+                    {content.topic || 'Untitled Content'}
+                  </h3>
+                  
+                  <p className="text-sm text-muted-foreground line-clamp-3">
+                    {content.content_text}
                   </p>
-                </div>
+                  
+                  {content.generated_image_url && (
+                    <div className="flex items-center mt-2 text-xs text-muted-foreground">
+                      <ImageIcon className="h-3 w-3 mr-1" />
+                      Image included
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
 
-                {/* Content Text */}
-                <div>
-                  <h4 className="font-medium mb-2">Content Text</h4>
-                  {editMode ? (
-                    <div className="space-y-3">
-                      <Textarea
-                        value={editedText}
-                        onChange={(e) => setEditedText(e.target.value)}
-                        rows={8}
-                        className="resize-none"
-                      />
-                      <div className="flex space-x-2">
-                        <Button onClick={handleSaveEdit} size="sm">
-                          Save Changes
-                        </Button>
-                        <Button 
-                          onClick={() => setEditMode(false)} 
-                          size="sm" 
-                          variant="outline"
-                        >
-                          Cancel
-                        </Button>
+          {/* Content Preview */}
+          <div className="lg:sticky lg:top-6">
+            {selectedContent ? (
+              <Card>
+                <CardHeader>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle className="flex items-center space-x-2">
+                        <div className={`w-3 h-3 rounded-full ${getPlatformColor(selectedContent.platform)}`} />
+                        <span className="capitalize">{selectedContent.platform} Post</span>
+                      </CardTitle>
+                      <CardDescription>
+                        {selectedContent.topic}
+                      </CardDescription>
+                    </div>
+                    <Badge className={getPersonaColor(selectedContent.persona)}>
+                      {selectedContent.persona?.replace('-', ' ') || 'Unknown'}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {selectedContent.generated_image_url && (
+                    <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
+                      <div className="text-center text-muted-foreground">
+                        <ImageIcon className="h-12 w-12 mx-auto mb-2" />
+                        <p className="text-sm">Generated Image</p>
+                        <p className="text-xs">Preview not available</p>
                       </div>
                     </div>
-                  ) : (
-                    <p className="text-sm leading-relaxed bg-muted p-3 rounded-lg">
-                      {selectedContent.content_text}
-                    </p>
                   )}
-                </div>
 
-                {/* Hashtags */}
-                <div>
-                  <h4 className="font-medium mb-2">Hashtags</h4>
-                  <p className="text-sm text-primary">{selectedContent.hashtags}</p>
-                </div>
+                  <div>
+                    <h4 className="font-medium mb-2">Content Text</h4>
+                    {editMode ? (
+                      <div className="space-y-3">
+                        <Textarea
+                          value={editedText}
+                          onChange={(e) => setEditedText(e.target.value)}
+                          className="min-h-[200px]"
+                        />
+                        <div className="flex space-x-2">
+                          <Button 
+                            size="sm" 
+                            onClick={handleEdit}
+                            disabled={actionLoading === selectedContent.id}
+                          >
+                            {actionLoading === selectedContent.id ? 'Saving...' : 'Save Changes'}
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={cancelEdit}>
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <p className="text-sm whitespace-pre-wrap bg-muted p-3 rounded">
+                          {selectedContent.content_text}
+                        </p>
+                        <Button size="sm" variant="outline" onClick={startEdit}>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit Text
+                        </Button>
+                      </div>
+                    )}
+                  </div>
 
-                {/* Call to Action */}
-                <div>
-                  <h4 className="font-medium mb-2">Call to Action</h4>
-                  <p className="text-sm bg-muted p-3 rounded-lg">{selectedContent.cta}</p>
-                </div>
+                  {selectedContent.hashtags && (
+                    <div>
+                      <h4 className="font-medium mb-2">Hashtags</h4>
+                      <p className="text-sm text-blue-600">{selectedContent.hashtags}</p>
+                    </div>
+                  )}
 
-                {/* Action Buttons */}
-                <div className="flex space-x-3 pt-4">
-                  <Button 
-                    onClick={() => handleApprove(selectedContent.id)}
-                    className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                  >
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Approve & Publish
-                  </Button>
-                  <Button 
-                    onClick={() => handleReject(selectedContent.id)}
-                    variant="destructive"
-                    className="flex-1"
-                  >
-                    <XCircle className="h-4 w-4 mr-2" />
-                    Reject
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <Card>
-              <CardContent className="text-center py-12">
-                <Eye className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">Select content to review</h3>
-                <p className="text-muted-foreground">
-                  Choose a content item from the list to preview and approve.
-                </p>
-              </CardContent>
-            </Card>
-          )}
+                  {selectedContent.cta && (
+                    <div>
+                      <h4 className="font-medium mb-2">Call to Action</h4>
+                      <p className="text-sm">{selectedContent.cta}</p>
+                    </div>
+                  )}
+
+                  <div className="flex space-x-3 pt-4 border-t">
+                    <Button 
+                      className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                      onClick={() => handleApprove(selectedContent.id)}
+                      disabled={actionLoading === selectedContent.id}
+                    >
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      {actionLoading === selectedContent.id ? 'Approving...' : 'Approve'}
+                    </Button>
+                    <Button 
+                      variant="destructive" 
+                      className="flex-1"
+                      onClick={() => handleReject(selectedContent.id)}
+                      disabled={actionLoading === selectedContent.id}
+                    >
+                      <XCircle className="h-4 w-4 mr-2" />
+                      {actionLoading === selectedContent.id ? 'Rejecting...' : 'Reject'}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <Eye className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold mb-2">Select Content to Review</h3>
+                  <p className="text-muted-foreground">
+                    Click on any content item from the list to preview and approve it
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

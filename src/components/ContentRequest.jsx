@@ -7,7 +7,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { Send, Sparkles, Upload, Image, Video, X, FileImage, FileVideo } from 'lucide-react'
+import { Send, Sparkles, Upload, Image, Video, X, FileImage, FileVideo, CheckCircle } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
 
 export function ContentRequest() {
   const [formData, setFormData] = useState({
@@ -19,6 +20,9 @@ export function ContentRequest() {
     images: [],
     videos: []
   })
+  
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitSuccess, setSubmitSuccess] = useState(false)
 
   const platforms = [
     { id: 'facebook', label: 'Facebook', color: 'bg-blue-500' },
@@ -54,41 +58,24 @@ export function ContentRequest() {
     }))
   }
 
-  const handleImageUpload = (e) => {
-    const files = Array.from(e.target.files)
-    const imageFiles = files.filter(file => file.type.startsWith('image/'))
+  const handleFileUpload = (files, type) => {
+    const fileArray = Array.from(files).map(file => ({
+      file,
+      name: file.name,
+      size: file.size,
+      type: file.type
+    }))
     
-    if (imageFiles.length > 0) {
-      setFormData(prev => ({
-        ...prev,
-        images: [...prev.images, ...imageFiles]
-      }))
-    }
-  }
-
-  const handleVideoUpload = (e) => {
-    const files = Array.from(e.target.files)
-    const videoFiles = files.filter(file => file.type.startsWith('video/'))
-    
-    if (videoFiles.length > 0) {
-      setFormData(prev => ({
-        ...prev,
-        videos: [...prev.videos, ...videoFiles]
-      }))
-    }
-  }
-
-  const removeImage = (index) => {
     setFormData(prev => ({
       ...prev,
-      images: prev.images.filter((_, i) => i !== index)
+      [type]: [...prev[type], ...fileArray]
     }))
   }
 
-  const removeVideo = (index) => {
+  const removeFile = (index, type) => {
     setFormData(prev => ({
       ...prev,
-      videos: prev.videos.filter((_, i) => i !== index)
+      [type]: prev[type].filter((_, i) => i !== index)
     }))
   }
 
@@ -102,290 +89,337 @@ export function ContentRequest() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    // TODO: Submit to Supabase with file uploads
-    console.log('Submitting content request:', formData)
+    setIsSubmitting(true)
     
-    // Reset form
-    setFormData({
-      topic: '',
-      context: '',
-      persona: '',
-      platforms: [],
-      tone: '',
-      images: [],
-      videos: []
-    })
-    
-    // Show success message
-    alert('Content request submitted successfully!')
+    try {
+      // Insert content request into Supabase
+      const { data, error } = await supabase
+        .from('content_requests')
+        .insert([
+          {
+            topic: formData.topic,
+            context: formData.context,
+            persona: formData.persona,
+            platforms: formData.platforms,
+            tone: formData.tone,
+            status: 'pending',
+            created_at: new Date().toISOString(),
+            // Note: File uploads would need separate handling with Supabase Storage
+            has_images: formData.images.length > 0,
+            has_videos: formData.videos.length > 0,
+            image_count: formData.images.length,
+            video_count: formData.videos.length
+          }
+        ])
+        .select()
+
+      if (error) {
+        console.error('Error submitting request:', error)
+        alert('Error submitting request. Please try again.')
+      } else {
+        console.log('Request submitted successfully:', data)
+        setSubmitSuccess(true)
+        
+        // Reset form after successful submission
+        setTimeout(() => {
+          setFormData({
+            topic: '',
+            context: '',
+            persona: '',
+            platforms: [],
+            tone: '',
+            images: [],
+            videos: []
+          })
+          setSubmitSuccess(false)
+        }, 3000)
+      }
+    } catch (error) {
+      console.error('Submission error:', error)
+      alert('Error submitting request. Please try again.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  if (submitSuccess) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Card className="w-full max-w-md text-center">
+          <CardContent className="p-8">
+            <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold mb-2">Request Submitted!</h3>
+            <p className="text-muted-foreground mb-4">
+              Your content request has been added to the queue. You'll be able to review the generated content in the Review tab.
+            </p>
+            <Button 
+              onClick={() => setSubmitSuccess(false)}
+              className="younifaied-gradient text-white"
+            >
+              Create Another Request
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="space-y-6">
       <div className="mb-6">
         <h1 className="text-3xl font-bold younifaied-text-gradient mb-2">
-          Request New Content
+          Request Content
         </h1>
         <p className="text-muted-foreground">
           Create a new content request for your YouNifAIed social media automation
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Sparkles className="h-5 w-5 text-primary" />
-            <span>Content Details</span>
-          </CardTitle>
-          <CardDescription>
-            Provide the topic and context for your content generation
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Topic */}
-            <div className="space-y-2">
-              <Label htmlFor="topic">Content Topic *</Label>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Content Details */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              <span>Content Details</span>
+            </CardTitle>
+            <CardDescription>
+              Provide the topic and context for your content generation
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="topic" className="text-sm font-medium">
+                Content Topic *
+              </Label>
               <Input
                 id="topic"
                 placeholder="e.g., Using AI to catch student effort instead of just errors"
                 value={formData.topic}
                 onChange={(e) => setFormData(prev => ({ ...prev, topic: e.target.value }))}
                 required
-                className="w-full"
+                className="mt-1"
               />
             </div>
 
-            {/* Context */}
-            <div className="space-y-2">
-              <Label htmlFor="context">Additional Context</Label>
+            <div>
+              <Label htmlFor="context" className="text-sm font-medium">
+                Additional Context
+              </Label>
               <Textarea
                 id="context"
                 placeholder="Share any specific details, personal experiences, or angles you want included..."
                 value={formData.context}
                 onChange={(e) => setFormData(prev => ({ ...prev, context: e.target.value }))}
-                rows={3}
-                className="w-full resize-none"
+                className="mt-1 min-h-[100px] resize-none"
               />
             </div>
+          </CardContent>
+        </Card>
 
-            {/* Image Upload */}
-            <div className="space-y-3">
-              <Label>Reference Images (Optional)</Label>
-              <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center hover:border-muted-foreground/50 transition-colors">
-                <input
-                  type="file"
-                  id="image-upload"
-                  multiple
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
-                <label htmlFor="image-upload" className="cursor-pointer">
-                  <div className="flex flex-col items-center space-y-2">
-                    <Image className="h-8 w-8 text-muted-foreground" />
-                    <div className="text-sm text-center">
-                      <span className="font-medium text-primary">Click to upload images</span>
-                      <span className="text-muted-foreground"> or drag and drop</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground text-center">
-                      PNG, JPG, GIF up to 10MB each
-                    </p>
-                  </div>
-                </label>
+        {/* Reference Files */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Upload className="h-5 w-5 text-primary" />
+              <span>Reference Images (Optional)</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
+              <Image className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <div className="space-y-2">
+                <p className="text-sm font-medium">Click to upload images or drag and drop</p>
+                <p className="text-xs text-muted-foreground">PNG, JPG, GIF up to 10MB each</p>
               </div>
-              
-              {/* Image Preview */}
-              {formData.images.length > 0 && (
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Uploaded Images ({formData.images.length})</Label>
-                  <div className="grid grid-cols-1 gap-2">
-                    {formData.images.map((file, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                        <div className="flex items-center space-x-3 min-w-0 flex-1">
-                          <FileImage className="h-5 w-5 text-blue-500 flex-shrink-0" />
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-medium truncate">{file.name}</p>
-                            <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
-                          </div>
-                        </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeImage(index)}
-                          className="h-8 w-8 p-0 flex-shrink-0"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={(e) => handleFileUpload(e.target.files, 'images')}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              />
             </div>
-
-            {/* Video Upload */}
-            <div className="space-y-3">
-              <Label>Reference Videos (Optional)</Label>
-              <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center hover:border-muted-foreground/50 transition-colors">
-                <input
-                  type="file"
-                  id="video-upload"
-                  multiple
-                  accept="video/*"
-                  onChange={handleVideoUpload}
-                  className="hidden"
-                />
-                <label htmlFor="video-upload" className="cursor-pointer">
-                  <div className="flex flex-col items-center space-y-2">
-                    <Video className="h-8 w-8 text-muted-foreground" />
-                    <div className="text-sm text-center">
-                      <span className="font-medium text-primary">Click to upload videos</span>
-                      <span className="text-muted-foreground"> or drag and drop</span>
+            
+            {formData.images.length > 0 && (
+              <div className="mt-4 space-y-2">
+                {formData.images.map((file, index) => (
+                  <div key={index} className="flex items-center justify-between p-2 bg-muted rounded">
+                    <div className="flex items-center space-x-2">
+                      <FileImage className="h-4 w-4 text-blue-500" />
+                      <span className="text-sm font-medium">{file.name}</span>
+                      <span className="text-xs text-muted-foreground">({formatFileSize(file.size)})</span>
                     </div>
-                    <p className="text-xs text-muted-foreground text-center">
-                      MP4, MOV, AVI up to 100MB each
-                    </p>
-                  </div>
-                </label>
-              </div>
-              
-              {/* Video Preview */}
-              {formData.videos.length > 0 && (
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Uploaded Videos ({formData.videos.length})</Label>
-                  <div className="grid grid-cols-1 gap-2">
-                    {formData.videos.map((file, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                        <div className="flex items-center space-x-3 min-w-0 flex-1">
-                          <FileVideo className="h-5 w-5 text-purple-500 flex-shrink-0" />
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-medium truncate">{file.name}</p>
-                            <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
-                          </div>
-                        </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeVideo(index)}
-                          className="h-8 w-8 p-0 flex-shrink-0"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Persona Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="persona">Voice & Persona *</Label>
-              <Select 
-                value={formData.persona} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, persona: value }))}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Choose the voice that best connects with your audience" />
-                </SelectTrigger>
-                <SelectContent>
-                  {personas.map((persona) => (
-                    <SelectItem key={persona.value} value={persona.value}>
-                      <div className="w-full">
-                        <div className="font-medium">{persona.label}</div>
-                        <div className="text-xs text-muted-foreground whitespace-normal break-words">
-                          {persona.description}
-                        </div>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Platform Selection */}
-            <div className="space-y-3">
-              <Label>Target Platforms *</Label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {platforms.map((platform) => (
-                  <div key={platform.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={platform.id}
-                      checked={formData.platforms.includes(platform.id)}
-                      onCheckedChange={(checked) => handlePlatformChange(platform.id, checked)}
-                    />
-                    <Label 
-                      htmlFor={platform.id}
-                      className="flex items-center space-x-2 cursor-pointer flex-1"
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeFile(index, 'images')}
                     >
-                      <div className={`w-3 h-3 rounded-full ${platform.color} flex-shrink-0`} />
-                      <span className="text-sm">{platform.label}</span>
-                    </Label>
+                      <X className="h-4 w-4" />
+                    </Button>
                   </div>
                 ))}
               </div>
-              {formData.platforms.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {formData.platforms.map((platformId) => {
-                    const platform = platforms.find(p => p.id === platformId)
-                    return (
-                      <Badge key={platformId} variant="secondary" className="text-xs">
-                        {platform?.label}
-                      </Badge>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
+            )}
+          </CardContent>
+        </Card>
 
-            {/* Tone Adjustment */}
-            <div className="space-y-2">
-              <Label htmlFor="tone">Tone Adjustment (Optional)</Label>
-              <Input
-                id="tone"
-                placeholder="e.g., More conversational, less formal"
-                value={formData.tone}
-                onChange={(e) => setFormData(prev => ({ ...prev, tone: e.target.value }))}
-                className="w-full"
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Video className="h-5 w-5 text-primary" />
+              <span>Reference Videos (Optional)</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
+              <Video className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <div className="space-y-2">
+                <p className="text-sm font-medium">Click to upload videos or drag and drop</p>
+                <p className="text-xs text-muted-foreground">MP4, MOV, AVI up to 100MB each</p>
+              </div>
+              <input
+                type="file"
+                multiple
+                accept="video/*"
+                onChange={(e) => handleFileUpload(e.target.files, 'videos')}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
               />
             </div>
-
-            {/* Upload Summary */}
-            {(formData.images.length > 0 || formData.videos.length > 0) && (
-              <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
-                <h4 className="font-medium mb-2 flex items-center">
-                  <Upload className="h-4 w-4 mr-2 flex-shrink-0" />
-                  Upload Summary
-                </h4>
-                <div className="text-sm text-muted-foreground space-y-1">
-                  {formData.images.length > 0 && (
-                    <p>• {formData.images.length} image{formData.images.length !== 1 ? 's' : ''} ready for upload</p>
-                  )}
-                  {formData.videos.length > 0 && (
-                    <p>• {formData.videos.length} video{formData.videos.length !== 1 ? 's' : ''} ready for upload</p>
-                  )}
-                  <p className="text-xs mt-2 text-muted-foreground">
-                    Files will be uploaded when you submit the content request
-                  </p>
-                </div>
+            
+            {formData.videos.length > 0 && (
+              <div className="mt-4 space-y-2">
+                {formData.videos.map((file, index) => (
+                  <div key={index} className="flex items-center justify-between p-2 bg-muted rounded">
+                    <div className="flex items-center space-x-2">
+                      <FileVideo className="h-4 w-4 text-purple-500" />
+                      <span className="text-sm font-medium">{file.name}</span>
+                      <span className="text-xs text-muted-foreground">({formatFileSize(file.size)})</span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeFile(index, 'videos')}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
               </div>
             )}
+          </CardContent>
+        </Card>
 
-            {/* Submit Button */}
-            <Button 
-              type="submit" 
-              className="w-full younifaied-gradient text-white"
-              disabled={!formData.topic || !formData.persona || formData.platforms.length === 0}
-            >
-              <Send className="h-4 w-4 mr-2" />
-              Submit Content Request
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+        {/* Voice & Persona */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Voice & Persona *</CardTitle>
+            <CardDescription>
+              Choose the voice that best connects with your audience
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Select value={formData.persona} onValueChange={(value) => setFormData(prev => ({ ...prev, persona: value }))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Choose the voice that best connects with your audience" />
+              </SelectTrigger>
+              <SelectContent>
+                {personas.map((persona) => (
+                  <SelectItem key={persona.value} value={persona.value}>
+                    <div className="flex flex-col">
+                      <span className="font-medium">{persona.label}</span>
+                      <span className="text-xs text-muted-foreground break-words whitespace-normal">
+                        {persona.description}
+                      </span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </CardContent>
+        </Card>
+
+        {/* Target Platforms */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Target Platforms *</CardTitle>
+            <CardDescription>
+              Select which social media platforms to create content for
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4">
+              {platforms.map((platform) => (
+                <div key={platform.id} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={platform.id}
+                    checked={formData.platforms.includes(platform.id)}
+                    onCheckedChange={(checked) => handlePlatformChange(platform.id, checked)}
+                  />
+                  <Label htmlFor={platform.id} className="flex items-center space-x-2 cursor-pointer">
+                    <div className={`w-3 h-3 rounded-full ${platform.color}`} />
+                    <span>{platform.label}</span>
+                  </Label>
+                </div>
+              ))}
+            </div>
+            
+            {formData.platforms.length > 0 && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {formData.platforms.map((platformId) => {
+                  const platform = platforms.find(p => p.id === platformId)
+                  return (
+                    <Badge key={platformId} variant="secondary">
+                      {platform?.label}
+                    </Badge>
+                  )
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Tone Adjustments */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Tone Adjustments (Optional)</CardTitle>
+            <CardDescription>
+              Any specific tone or style adjustments for this content
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Textarea
+              placeholder="e.g., More conversational, less formal, add humor, focus on practical tips..."
+              value={formData.tone}
+              onChange={(e) => setFormData(prev => ({ ...prev, tone: e.target.value }))}
+              className="min-h-[80px] resize-none"
+            />
+          </CardContent>
+        </Card>
+
+        {/* Submit Button */}
+        <div className="flex justify-end">
+          <Button 
+            type="submit" 
+            className="younifaied-gradient text-white px-8"
+            disabled={!formData.topic || !formData.persona || formData.platforms.length === 0 || isSubmitting}
+          >
+            {isSubmitting ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                Submitting...
+              </>
+            ) : (
+              <>
+                <Send className="h-4 w-4 mr-2" />
+                Submit Request
+              </>
+            )}
+          </Button>
+        </div>
+      </form>
     </div>
   )
 }
