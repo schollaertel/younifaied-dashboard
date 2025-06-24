@@ -3,8 +3,6 @@
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { createContentRequest, createWorkflowExecution, getBlotatoAccountIds } from '../lib/supabase'
-import WorkflowRouter from '../lib/workflow-router'
-import { BlotatoAPI } from '../lib/blotato-api'
 
 export function ContentRequest() {
   const { user } = useAuth()
@@ -18,46 +16,16 @@ export function ContentRequest() {
     long_tail_keywords: '',
     business_objective: '',
     priority: 'normal',
-    inspiration_link: '',
-    user_content: {
-      images: [],
-      videos: [],
-      text_content: '',
-      brand_assets: []
-    },
-    ab_testing: {
-      enabled: false,
-      variations: 1,
-      success_metrics: []
-    },
-    advanced_options: {
-      tone: 'casual',
-      custom_cta: '',
-      audience_persona: '',
-      scheduling: 'optimal'
-    }
+    inspiration_link: ''
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [showAdvanced, setShowAdvanced] = useState(false)
-  const [showABTesting, setShowABTesting] = useState(false)
 
   const handleInputChange = (field, value) => {
-    if (field.includes('.')) {
-      const [parent, child] = field.split('.')
-      setFormData(prev => ({
-        ...prev,
-        [parent]: {
-          ...prev[parent],
-          [child]: value
-        }
-      }))
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [field]: value
-      }))
-    }
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }))
   }
 
   const handlePlatformChange = (platform, checked) => {
@@ -66,16 +34,6 @@ export function ContentRequest() {
       platforms: checked 
         ? [...prev.platforms, platform]
         : prev.platforms.filter(p => p !== platform)
-    }))
-  }
-
-  const handleFileUpload = (type, files) => {
-    setFormData(prev => ({
-      ...prev,
-      user_content: {
-        ...prev.user_content,
-        [type]: Array.from(files)
-      }
     }))
   }
 
@@ -109,9 +67,6 @@ export function ContentRequest() {
         business_objective: formData.business_objective,
         priority: formData.priority,
         inspiration_link: formData.inspiration_link,
-        user_content: formData.user_content,
-        ab_testing: formData.ab_testing,
-        advanced_options: formData.advanced_options,
         status: 'pending'
       }
 
@@ -119,46 +74,6 @@ export function ContentRequest() {
       
       if (!contentResult.success) {
         throw new Error(contentResult.error)
-      }
-
-      // Initialize workflow router
-      const workflowRouter = new WorkflowRouter()
-      const routingResult = workflowRouter.routeContentRequest({
-        contentType: formData.content_type,
-        platforms: formData.platforms,
-        businessObjective: formData.business_objective,
-        priority: formData.priority
-      })
-
-      // Create workflow execution record
-      const workflowData = {
-        content_request_id: contentResult.data.id,
-        workflowId: routingResult.workflowId,
-        workflowType: routingResult.workflowType,
-        platformRequirements: routingResult.platformRequirements,
-        estimatedTime: routingResult.estimatedTime
-      }
-
-      const workflowResult = await createWorkflowExecution(workflowData)
-      
-      if (!workflowResult.success) {
-        console.error('Workflow execution creation failed:', workflowResult.error)
-      }
-
-      // Get Blotato account IDs
-      const accountResult = await getBlotatoAccountIds()
-      
-      if (accountResult.success) {
-        // Initialize Blotato API
-        const blotatoApiKey = import.meta.env.VITE_BLOTATO_API_KEY
-        if (blotatoApiKey) {
-          const blotatoAPI = new BlotatoAPI(blotatoApiKey)
-          const blotatoResult = await blotatoAPI.processContentRequest(routingResult.payload)
-          
-          if (blotatoResult.success) {
-            console.log('Content generation initiated:', blotatoResult)
-          }
-        }
       }
 
       // Reset form
@@ -172,24 +87,7 @@ export function ContentRequest() {
         long_tail_keywords: '',
         business_objective: '',
         priority: 'normal',
-        inspiration_link: '',
-        user_content: {
-          images: [],
-          videos: [],
-          text_content: '',
-          brand_assets: []
-        },
-        ab_testing: {
-          enabled: false,
-          variations: 1,
-          success_metrics: []
-        },
-        advanced_options: {
-          tone: 'casual',
-          custom_cta: '',
-          audience_persona: '',
-          scheduling: 'optimal'
-        }
+        inspiration_link: ''
       })
 
       alert('Content request submitted successfully!')
@@ -200,38 +98,6 @@ export function ContentRequest() {
     } finally {
       setIsSubmitting(false)
     }
-  }
-
-  const resetForm = () => {
-    setFormData({
-      content_type: '',
-      platforms: [],
-      topic: '',
-      content_description: '',
-      primary_keywords: '',
-      secondary_keywords: '',
-      long_tail_keywords: '',
-      business_objective: '',
-      priority: 'normal',
-      inspiration_link: '',
-      user_content: {
-        images: [],
-        videos: [],
-        text_content: '',
-        brand_assets: []
-      },
-      ab_testing: {
-        enabled: false,
-        variations: 1,
-        success_metrics: []
-      },
-      advanced_options: {
-        tone: 'casual',
-        custom_cta: '',
-        audience_persona: '',
-        scheduling: 'optimal'
-      }
-    })
   }
 
   return (
@@ -410,220 +276,14 @@ export function ContentRequest() {
           />
         </div>
 
-        {/* User Content Upload */}
-        <div className="bg-blue-50 p-4 rounded-md">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Your Content (Optional)</h3>
-          <p className="text-sm text-gray-600 mb-4">Upload your own images, videos, or provide text content. User content takes priority over AI generation.</p>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Images
-              </label>
-              <input
-                type="file"
-                multiple
-                accept="image/*"
-                onChange={(e) => handleFileUpload('images', e.target.files)}
-                className="w-full p-2 border border-gray-300 rounded-md"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Videos
-              </label>
-              <input
-                type="file"
-                multiple
-                accept="video/*"
-                onChange={(e) => handleFileUpload('videos', e.target.files)}
-                className="w-full p-2 border border-gray-300 rounded-md"
-              />
-            </div>
-          </div>
-
-          <div className="mt-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Text Content
-            </label>
-            <textarea
-              value={formData.user_content.text_content}
-              onChange={(e) => handleInputChange('user_content.text_content', e.target.value)}
-              placeholder="Any specific text, quotes, or copy you want to include..."
-              rows={3}
-              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-        </div>
-
-        {/* A/B Testing Section */}
-        <div className="border border-gray-200 rounded-md p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-medium text-gray-900">A/B Testing</h3>
-            <button
-              type="button"
-              onClick={() => setShowABTesting(!showABTesting)}
-              className="text-blue-600 hover:text-blue-800 text-sm"
-            >
-              {showABTesting ? 'Hide Options' : 'Show Options'}
-            </button>
-          </div>
-
-          {showABTesting && (
-            <div className="space-y-4">
-              <label className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={formData.ab_testing.enabled}
-                  onChange={(e) => handleInputChange('ab_testing.enabled', e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span className="text-sm text-gray-700">Enable A/B Testing</span>
-              </label>
-
-              {formData.ab_testing.enabled && (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Number of Variations
-                    </label>
-                    <select
-                      value={formData.ab_testing.variations}
-                      onChange={(e) => handleInputChange('ab_testing.variations', parseInt(e.target.value))}
-                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      <option value={1}>1 Version</option>
-                      <option value={2}>2 Versions</option>
-                      <option value={3}>3 Versions</option>
-                      <option value={4}>4 Versions</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Success Metrics
-                    </label>
-                    <div className="grid grid-cols-2 gap-3">
-                      {['Engagement Rate', 'Reach', 'Clicks', 'Conversions', 'Shares', 'Comments'].map(metric => (
-                        <label key={metric} className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
-                            checked={formData.ab_testing.success_metrics.includes(metric.toLowerCase().replace(' ', '_'))}
-                            onChange={(e) => {
-                              const metricKey = metric.toLowerCase().replace(' ', '_')
-                              const currentMetrics = formData.ab_testing.success_metrics
-                              const newMetrics = e.target.checked 
-                                ? [...currentMetrics, metricKey]
-                                : currentMetrics.filter(m => m !== metricKey)
-                              handleInputChange('ab_testing.success_metrics', newMetrics)
-                            }}
-                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                          />
-                          <span className="text-sm text-gray-700">{metric}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Advanced Options */}
-        <div className="border border-gray-200 rounded-md p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-medium text-gray-900">Advanced Options</h3>
-            <button
-              type="button"
-              onClick={() => setShowAdvanced(!showAdvanced)}
-              className="text-blue-600 hover:text-blue-800 text-sm"
-            >
-              {showAdvanced ? 'Hide Options' : 'Show Options'}
-            </button>
-          </div>
-
-          {showAdvanced && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tone
-                </label>
-                <select
-                  value={formData.advanced_options.tone}
-                  onChange={(e) => handleInputChange('advanced_options.tone', e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="playful">Playful</option>
-                  <option value="professional">Professional</option>
-                  <option value="casual">Casual</option>
-                  <option value="urgent">Urgent</option>
-                  <option value="inspirational">Inspirational</option>
-                  <option value="educational">Educational</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Audience Persona
-                </label>
-                <input
-                  type="text"
-                  value={formData.advanced_options.audience_persona}
-                  onChange={(e) => handleInputChange('advanced_options.audience_persona', e.target.value)}
-                  placeholder="teachers, administrators, ed tech leaders, educators"
-                  className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Custom Call-to-Action
-                </label>
-                <input
-                  type="text"
-                  value={formData.advanced_options.custom_cta}
-                  onChange={(e) => handleInputChange('advanced_options.custom_cta', e.target.value)}
-                  placeholder="Follow my learning journey"
-                  className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Scheduling
-                </label>
-                <select
-                  value={formData.advanced_options.scheduling}
-                  onChange={(e) => handleInputChange('advanced_options.scheduling', e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="optimal">Optimal Time (AI decides)</option>
-                  <option value="immediate">Post Immediately</option>
-                  <option value="custom">Custom Schedule</option>
-                </select>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Submit Buttons */}
-        <div className="flex space-x-4">
+        {/* Submit Button */}
+        <div>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? 'Creating Content...' : 'Create Content Request'}
-          </button>
-          
-          <button
-            type="button"
-            onClick={resetForm}
-            className="px-6 py-3 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          >
-            Reset Form
           </button>
         </div>
 
