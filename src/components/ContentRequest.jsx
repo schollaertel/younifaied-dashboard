@@ -16,10 +16,21 @@ export function ContentRequest() {
     long_tail_keywords: '',
     business_objective: '',
     priority: 'normal',
-    inspiration_link: ''
+    inspiration_link: '',
+    audience_persona_name: '',
+    brand_profile_name: 'YouNifAiEd' // Default brand profile
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Audience personas from your database
+  const audiencePersonas = [
+    { value: 'tech_innovator', label: 'Tech Innovator', description: 'Forward-thinking technology enthusiast' },
+    { value: 'expert_coach', label: 'Expert Coach', description: 'Calm, steady, experienced, and empowering' },
+    { value: 'relatable_mom', label: 'The Relatable Mom', description: 'Warm, honest, supportive, and inclusive' },
+    { value: 'community_builder', label: 'Community Builder', description: 'Inclusive leader focused on bringing people together' },
+    { value: 'the_challenger', label: 'The Challenger', description: 'Raw, unapologetic, bold, and thought-provoking' }
+  ]
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -45,8 +56,8 @@ export function ContentRequest() {
       return
     }
 
-    if (!formData.content_type || formData.platforms.length === 0 || !formData.topic || !formData.content_description) {
-      alert('Please fill in all required fields: Content Type, Platforms, Topic, and Content Description')
+    if (!formData.content_type || formData.platforms.length === 0 || !formData.topic || !formData.content_description || !formData.audience_persona_name) {
+      alert('Please fill in all required fields: Content Type, Platforms, Topic, Content Description, and Audience Persona')
       return
     }
 
@@ -67,6 +78,8 @@ export function ContentRequest() {
         business_objective: formData.business_objective,
         priority: formData.priority,
         inspiration_link: formData.inspiration_link,
+        audience_persona_name: formData.audience_persona_name,
+        brand_profile_name: formData.brand_profile_name,
         status: 'pending'
       }
 
@@ -87,7 +100,9 @@ export function ContentRequest() {
         long_tail_keywords: '',
         business_objective: '',
         priority: 'normal',
-        inspiration_link: ''
+        inspiration_link: '',
+        audience_persona_name: '',
+        brand_profile_name: 'YouNifAiEd'
       })
 
       alert('Content request submitted successfully!')
@@ -174,6 +189,26 @@ export function ContentRequest() {
             className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             required
           />
+        </div>
+
+        {/* Audience Persona */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Audience Persona *
+          </label>
+          <select
+            value={formData.audience_persona_name}
+            onChange={(e) => handleInputChange('audience_persona_name', e.target.value)}
+            className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            required
+          >
+            <option value="">Select audience persona</option>
+            {audiencePersonas.map(persona => (
+              <option key={persona.value} value={persona.value}>
+                {persona.label} - {persona.description}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Keywords Section */}
