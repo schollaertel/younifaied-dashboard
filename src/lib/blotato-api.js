@@ -484,4 +484,4 @@ Generate engaging, platform-optimized content that drives ${business_objective}.
   }
 }
 
-module.exports = BlotAtoAPI;
+export default BlotAtoAPI;
