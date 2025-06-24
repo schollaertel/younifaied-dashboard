@@ -12,7 +12,7 @@ class BlotAtoAPI {
   }
 
   // Main content generation and publishing workflow
-  async processContentRequest(workflowPayload) {
+  async processContentRequest(workflowPayload ) {
     try {
       console.log('🚀 Starting Blotato content generation workflow...');
       
@@ -485,4 +485,3 @@ Generate engaging, platform-optimized content that drives ${business_objective}.
 }
 
 module.exports = BlotAtoAPI;
-
