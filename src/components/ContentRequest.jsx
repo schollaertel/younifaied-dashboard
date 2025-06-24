@@ -648,5 +648,3 @@ export function ContentRequest() {
   )
 }
 
-export { ContentRequest }
-
