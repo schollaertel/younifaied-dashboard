@@ -1,682 +1,643 @@
-import { useState, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import { Send, Sparkles, Upload, Image, Video, X, FileImage, FileVideo, CheckCircle, ChevronDown, ChevronUp, Zap, Target, Calendar, BarChart3, Settings } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
+'use client'
 
-export function ContentRequest() {
+import { useState } from 'react'
+import { createContentRequest, createWorkflowExecution, getBlotatoAccountIds } from '@/lib/supabase'
+import WorkflowRouter from '@/lib/workflow-router'
+import BlotatoAPI from '@/lib/blotato-api'
+
+export default function ContentRequest() {
   const [formData, setFormData] = useState({
-    topic: '',
-    context: '',
-    persona: '',
-    platforms: [],
-    tone: '',
-    images: [],
-    videos: [],
-    // Enhanced fields
     content_type: '',
-    priority_level: '',
+    platforms: [],
+    content_description: '',
     business_objective: '',
-    custom_cta: '',
-    tone_adjustment: '',
-    scheduled_publish_time: '',
-    content_variations: 1,
-    success_metrics: {
-      target_engagement_rate: '',
-      target_reach: '',
-      target_clicks: '',
-      target_conversions: ''
+    priority: 'normal',
+    user_content: {
+      images: [],
+      videos: [],
+      custom_caption: '',
+      custom_hashtags: ''
     },
-    user_provided_content: false
+    ab_testing: {
+      enabled: false,
+      variations: 1,
+      success_metrics: []
+    },
+    advanced_options: {
+      tone: '',
+      audience_persona: '',
+      custom_cta: '',
+      scheduling: 'optimal_time'
+    }
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [showAdvanced, setShowAdvanced] = useState(false)
+  const [submitStatus, setSubmitStatus] = useState(null)
   const [showABTesting, setShowABTesting] = useState(false)
-  const [showScheduling, setShowScheduling] = useState(false)
+  const [showAdvanced, setShowAdvanced] = useState(false)
 
   const contentTypes = [
-    { value: 'social_post', label: 'Social Media Post', description: 'Standard social media content' },
-    { value: 'blog_article', label: 'Blog Article', description: 'Long-form blog content' },
-    { value: 'email_campaign', label: 'Email Campaign', description: 'Email marketing content' },
-    { value: 'video_script', label: 'Video Script', description: 'Script for video content' },
-    { value: 'infographic_text', label: 'Infographic Text', description: 'Text for visual infographics' }
-  ]
-
-  const priorityLevels = [
-    { value: 'low', label: 'Low', color: 'bg-gray-100 text-gray-800' },
-    { value: 'normal', label: 'Normal', color: 'bg-blue-100 text-blue-800' },
-    { value: 'high', label: 'High', color: 'bg-orange-100 text-orange-800' },
-    { value: 'urgent', label: 'Urgent', color: 'bg-red-100 text-red-800' }
-  ]
-
-  const businessObjectives = [
-    { value: 'engagement', label: 'Engagement', description: 'Maximize likes, comments, shares' },
-    { value: 'reach', label: 'Reach', description: 'Maximize audience reach' },
-    { value: 'conversions', label: 'Conversions', description: 'Drive specific actions' },
-    { value: 'brand_awareness', label: 'Brand Awareness', description: 'Increase brand recognition' },
-    { value: 'lead_generation', label: 'Lead Generation', description: 'Generate qualified leads' },
-    { value: 'community_building', label: 'Community Building', description: 'Build audience community' }
-  ]
-
-  const toneAdjustments = [
-    { value: 'standard', label: 'Standard' },
-    { value: 'more_playful', label: 'More Playful' },
-    { value: 'more_professional', label: 'More Professional' },
-    { value: 'more_casual', label: 'More Casual' },
-    { value: 'more_urgent', label: 'More Urgent' }
+    { value: 'social_post', label: 'Social Media Post' },
+    { value: 'video_script', label: 'Video Script' },
+    { value: 'blog_post', label: 'Blog Post' },
+    { value: 'email_campaign', label: 'Email Campaign' },
+    { value: 'infographic', label: 'Infographic' }
   ]
 
   const platforms = [
-    { id: 'linkedin', name: 'LinkedIn', icon: '💼' },
-    { id: 'facebook', name: 'Facebook', icon: '📘' },
-    { id: 'twitter', name: 'Twitter', icon: '🐦' },
-    { id: 'instagram', name: 'Instagram', icon: '📸' },
-    { id: 'youtube', name: 'YouTube', icon: '📺' },
-    { id: 'tiktok', name: 'TikTok', icon: '🎵' }
+    { value: 'instagram', label: 'Instagram' },
+    { value: 'facebook', label: 'Facebook' },
+    { value: 'twitter', label: 'Twitter/X' },
+    { value: 'linkedin', label: 'LinkedIn' },
+    { value: 'youtube', label: 'YouTube' },
+    { value: 'tiktok', label: 'TikTok' },
+    { value: 'pinterest', label: 'Pinterest' }
   ]
 
-  const handleImageUpload = (event) => {
-    const files = Array.from(event.target.files)
-    const newImages = files.map(file => ({
-      file,
-      name: file.name,
-      size: file.size,
-      preview: URL.createObjectURL(file)
-    }))
-    
+  const businessObjectives = [
+    { value: 'engagement', label: 'Increase Engagement' },
+    { value: 'reach', label: 'Expand Reach' },
+    { value: 'conversions', label: 'Drive Conversions' },
+    { value: 'brand_awareness', label: 'Build Brand Awareness' },
+    { value: 'lead_generation', label: 'Generate Leads' },
+    { value: 'customer_retention', label: 'Retain Customers' }
+  ]
+
+  const priorities = [
+    { value: 'low', label: 'Low', color: 'bg-gray-100 text-gray-800' },
+    { value: 'normal', label: 'Normal', color: 'bg-blue-100 text-blue-800' },
+    { value: 'high', label: 'High', color: 'bg-yellow-100 text-yellow-800' },
+    { value: 'urgent', label: 'Urgent', color: 'bg-red-100 text-red-800' }
+  ]
+
+  const tones = [
+    { value: 'professional', label: 'Professional' },
+    { value: 'casual', label: 'Casual' },
+    { value: 'playful', label: 'Playful' },
+    { value: 'urgent', label: 'Urgent' },
+    { value: 'inspirational', label: 'Inspirational' },
+    { value: 'educational', label: 'Educational' }
+  ]
+
+  const successMetrics = [
+    { value: 'engagement_rate', label: 'Engagement Rate' },
+    { value: 'reach', label: 'Reach' },
+    { value: 'clicks', label: 'Clicks' },
+    { value: 'conversions', label: 'Conversions' },
+    { value: 'shares', label: 'Shares' },
+    { value: 'comments', label: 'Comments' }
+  ]
+
+  const handleInputChange = (field, value) => {
+    if (field.includes('.')) {
+      const [parent, child] = field.split('.')
+      setFormData(prev => ({
+        ...prev,
+        [parent]: {
+          ...prev[parent],
+          [child]: value
+        }
+      }))
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [field]: value
+      }))
+    }
+  }
+
+  const handlePlatformChange = (platform) => {
     setFormData(prev => ({
       ...prev,
-      images: [...prev.images, ...newImages],
-      user_provided_content: true
+      platforms: prev.platforms.includes(platform)
+        ? prev.platforms.filter(p => p !== platform)
+        : [...prev.platforms, platform]
     }))
   }
 
-  const handleVideoUpload = (event) => {
-    const files = Array.from(event.target.files)
-    const newVideos = files.map(file => ({
-      file,
-      name: file.name,
-      size: file.size,
-      preview: URL.createObjectURL(file)
-    }))
-    
+  const handleMetricChange = (metric) => {
     setFormData(prev => ({
       ...prev,
-      videos: [...prev.videos, ...newVideos],
-      user_provided_content: true
+      ab_testing: {
+        ...prev.ab_testing,
+        success_metrics: prev.ab_testing.success_metrics.includes(metric)
+          ? prev.ab_testing.success_metrics.filter(m => m !== metric)
+          : [...prev.ab_testing.success_metrics, metric]
+      }
     }))
   }
 
-  const removeImage = (index) => {
+  const handleFileUpload = (files, type) => {
+    const fileArray = Array.from(files)
     setFormData(prev => ({
       ...prev,
-      images: prev.images.filter((_, i) => i !== index)
+      user_content: {
+        ...prev.user_content,
+        [type]: [...prev.user_content[type], ...fileArray]
+      }
     }))
   }
 
-  const removeVideo = (index) => {
+  const removeFile = (index, type) => {
     setFormData(prev => ({
       ...prev,
-      videos: prev.videos.filter((_, i) => i !== index)
-    }))
-  }
-
-  const togglePlatform = (platformId) => {
-    setFormData(prev => ({
-      ...prev,
-      platforms: prev.platforms.includes(platformId)
-        ? prev.platforms.filter(p => p !== platformId)
-        : [...prev.platforms, platformId]
+      user_content: {
+        ...prev.user_content,
+        [type]: prev.user_content[type].filter((_, i) => i !== index)
+      }
     }))
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setIsSubmitting(true)
+    setSubmitStatus(null)
 
     try {
-      // Prepare data for submission
-      const submissionData = {
-        topic: formData.topic,
-        additional_context: formData.context,
-        target_platforms: formData.platforms.length > 0 ? formData.platforms : ['linkedin'],
-        audience_persona_name: formData.persona || 'AI will determine optimal persona',
-        brand_profile_name: 'YouNifAIed Brand',
-        content_type: formData.content_type || 'social_post',
-        priority_level: formData.priority_level || 'normal',
-        business_objective: formData.business_objective || 'engagement',
-        custom_cta: formData.custom_cta,
-        tone_adjustment: formData.tone_adjustment || 'standard',
-        scheduled_publish_time: formData.scheduled_publish_time || null,
-        success_metrics: {
-          target_engagement_rate: formData.success_metrics.target_engagement_rate || null,
-          target_reach: formData.success_metrics.target_reach || null,
-          target_clicks: formData.success_metrics.target_clicks || null,
-          target_conversions: formData.success_metrics.target_conversions || null,
-          content_variations: formData.content_variations
-        },
-        request_metadata: {
-          user_provided_images: formData.images.length,
-          user_provided_videos: formData.videos.length,
-          user_provided_content: formData.user_provided_content,
-          form_version: '2.0_enhanced'
-        },
-        user_id: '00000000-0000-0000-0000-000000000000', // Replace with actual user ID
-        user_email: 'user@example.com' // Replace with actual user email
+      // Validate required fields
+      if (!formData.content_type || !formData.content_description || formData.platforms.length === 0) {
+        throw new Error('Please fill in all required fields')
       }
 
-      const { data, error } = await supabase
-        .from('content_requests')
-        .insert([submissionData])
-        .select()
+      // Create content request in database
+      const requestResult = await createContentRequest({
+        content_type: formData.content_type,
+        platforms: formData.platforms,
+        content_description: formData.content_description,
+        business_objective: formData.business_objective,
+        priority: formData.priority,
+        user_content: formData.user_content,
+        ab_testing: formData.ab_testing,
+        advanced_options: formData.advanced_options,
+        status: 'pending'
+      })
 
-      if (error) throw error
+      if (!requestResult.success) {
+        throw new Error(requestResult.error)
+      }
+
+      // Initialize workflow router
+      const router = new WorkflowRouter()
+      
+      // Route the content request
+      const routingResult = router.routeContentRequest({
+        ...formData,
+        id: requestResult.data.id
+      })
+
+      // Create workflow execution record
+      const workflowResult = await createWorkflowExecution({
+        content_request_id: requestResult.data.id,
+        workflowId: routingResult.workflowId,
+        workflowType: routingResult.workflowType,
+        platformRequirements: routingResult.platformRequirements,
+        estimatedTime: routingResult.estimatedTime
+      })
+
+      if (!workflowResult.success) {
+        throw new Error(workflowResult.error)
+      }
+
+      // Get Blotato account IDs
+      const accountIdsResult = await getBlotatoAccountIds()
+      
+      // Process with Blotato API if API key is available
+      const blotatoApiKey = import.meta.env.VITE_BLOTATO_API_KEY
+      if (blotatoApiKey) {
+        const blotatoAPI = new BlotatoAPI(blotatoApiKey)
+        const blotatoResult = await blotatoAPI.processContentRequest(routingResult.payload)
+        
+        // Save Blotato results
+        if (blotatoResult.success) {
+          console.log('Blotato processing completed:', blotatoResult.summary)
+        }
+      }
+
+      setSubmitStatus({
+        type: 'success',
+        message: `Content request submitted successfully! Estimated completion time: ${routingResult.estimatedTime} minutes.`
+      })
 
       // Reset form
       setFormData({
-        topic: '',
-        context: '',
-        persona: '',
-        platforms: [],
-        tone: '',
-        images: [],
-        videos: [],
         content_type: '',
-        priority_level: '',
+        platforms: [],
+        content_description: '',
         business_objective: '',
-        custom_cta: '',
-        tone_adjustment: '',
-        scheduled_publish_time: '',
-        content_variations: 1,
-        success_metrics: {
-          target_engagement_rate: '',
-          target_reach: '',
-          target_clicks: '',
-          target_conversions: ''
+        priority: 'normal',
+        user_content: {
+          images: [],
+          videos: [],
+          custom_caption: '',
+          custom_hashtags: ''
         },
-        user_provided_content: false
+        ab_testing: {
+          enabled: false,
+          variations: 1,
+          success_metrics: []
+        },
+        advanced_options: {
+          tone: '',
+          audience_persona: '',
+          custom_cta: '',
+          scheduling: 'optimal_time'
+        }
       })
 
-      alert('Content request submitted successfully!')
     } catch (error) {
-      console.error('Error submitting request:', error)
-      alert('Error submitting request. Please try again.')
+      console.error('Submission error:', error)
+      setSubmitStatus({
+        type: 'error',
+        message: error.message || 'Failed to submit content request. Please try again.'
+      })
     } finally {
       setIsSubmitting(false)
     }
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center space-x-2">
-        <Sparkles className="h-6 w-6 text-primary" />
-        <h2 className="text-2xl font-bold">Request Content</h2>
-      </div>
-      <p className="text-muted-foreground">
-        Create a new content request for your YouNifAIed social media automation
-      </p>
-
+    <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-lg">
+      <h2 className="text-2xl font-bold text-gray-900 mb-6">Create Content Request</h2>
+      
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Basic Content Details */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Sparkles className="h-5 w-5" />
-              <span>Content Details</span>
-            </CardTitle>
-            <CardDescription>
-              Provide the topic and context for your content generation
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="topic">Content Topic *</Label>
-              <Input
-                id="topic"
-                placeholder="e.g., Using AI to catch student effort instead of just errors"
-                value={formData.topic}
-                onChange={(e) => setFormData(prev => ({ ...prev, topic: e.target.value }))}
-                required
-              />
-            </div>
+        {/* Content Type Selection */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Content Type *
+          </label>
+          <select
+            value={formData.content_type}
+            onChange={(e) => handleInputChange('content_type', e.target.value)}
+            className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            required
+          >
+            <option value="">Select content type...</option>
+            {contentTypes.map(type => (
+              <option key={type.value} value={type.value}>
+                {type.label}
+              </option>
+            ))}
+          </select>
+        </div>
 
-            <div>
-              <Label htmlFor="content-type">Content Type</Label>
-              <Select value={formData.content_type} onValueChange={(value) => setFormData(prev => ({ ...prev, content_type: value }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="AI will choose optimal type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {contentTypes.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      <div>
-                        <div className="font-medium">{type.label}</div>
-                        <div className="text-xs text-muted-foreground">{type.description}</div>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+        {/* Platform Selection */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Platforms * (Select all that apply)
+          </label>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {platforms.map(platform => (
+              <label key={platform.value} className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.platforms.includes(platform.value)}
+                  onChange={() => handlePlatformChange(platform.value)}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700">{platform.label}</span>
+              </label>
+            ))}
+          </div>
+        </div>
 
-            <div>
-              <Label htmlFor="context">Additional Context</Label>
-              <Textarea
-                id="context"
-                placeholder="Share any specific details, personal experiences, or angles you want included... (AI will enhance if left blank)"
-                value={formData.context}
-                onChange={(e) => setFormData(prev => ({ ...prev, context: e.target.value }))}
-                rows={3}
-              />
-            </div>
+        {/* Content Description */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Content Description *
+          </label>
+          <textarea
+            value={formData.content_description}
+            onChange={(e) => handleInputChange('content_description', e.target.value)}
+            placeholder="Describe what content you want created... (Leave blank for AI to optimize)"
+            className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            rows={4}
+            required
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            💡 AI will optimize and expand your description for each platform
+          </p>
+        </div>
 
-            <div>
-              <Label>Target Platforms</Label>
-              <div className="grid grid-cols-3 gap-2 mt-2">
-                {platforms.map((platform) => (
-                  <Button
-                    key={platform.id}
-                    type="button"
-                    variant={formData.platforms.includes(platform.id) ? "default" : "outline"}
-                    className="justify-start"
-                    onClick={() => togglePlatform(platform.id)}
-                  >
-                    <span className="mr-2">{platform.icon}</span>
-                    {platform.name}
-                  </Button>
-                ))}
-              </div>
-              {formData.platforms.length === 0 && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  <Zap className="h-3 w-3 inline mr-1" />
-                  AI will select optimal platforms if none chosen
-                </p>
-              )}
+        {/* Business Objective & Priority */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Business Objective
+            </label>
+            <select
+              value={formData.business_objective}
+              onChange={(e) => handleInputChange('business_objective', e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="">Leave blank for AI to optimize</option>
+              {businessObjectives.map(obj => (
+                <option key={obj.value} value={obj.value}>
+                  {obj.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Priority Level
+            </label>
+            <div className="flex space-x-2">
+              {priorities.map(priority => (
+                <button
+                  key={priority.value}
+                  type="button"
+                  onClick={() => handleInputChange('priority', priority.value)}
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    formData.priority === priority.value
+                      ? priority.color
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {priority.label}
+                </button>
+              ))}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* User Content Upload */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Upload className="h-5 w-5" />
-              <span>Upload Your Content</span>
-            </CardTitle>
-            <CardDescription>
-              Upload your own images or videos - these will take priority over AI-generated content
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Image Upload */}
-            <div>
-              <Label>Upload Your Images</Label>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                  id="image-upload"
-                />
-                <label htmlFor="image-upload" className="cursor-pointer">
-                  <FileImage className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                  <p className="text-sm text-gray-600">Click to upload images or drag and drop</p>
-                  <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB each</p>
-                </label>
-              </div>
+        <div className="border border-gray-200 rounded-lg p-4">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">
+            Upload Your Content (Optional)
+          </h3>
+          <p className="text-sm text-gray-600 mb-4">
+            🎯 User content takes priority over AI-generated content
+          </p>
 
-              {formData.images.length > 0 && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-                  {formData.images.map((image, index) => (
-                    <div key={index} className="relative group">
-                      <img
-                        src={image.preview}
-                        alt={image.name}
-                        className="w-full h-24 object-cover rounded-lg"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeImage(index)}
-                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                      <p className="text-xs text-gray-600 mt-1 truncate">{image.name}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Video Upload */}
-            <div>
-              <Label>Upload Your Videos</Label>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
-                <input
-                  type="file"
-                  multiple
-                  accept="video/*"
-                  onChange={handleVideoUpload}
-                  className="hidden"
-                  id="video-upload"
-                />
-                <label htmlFor="video-upload" className="cursor-pointer">
-                  <FileVideo className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                  <p className="text-sm text-gray-600">Click to upload videos or drag and drop</p>
-                  <p className="text-xs text-gray-500">MP4, MOV, AVI up to 100MB each</p>
-                </label>
-              </div>
-
-              {formData.videos.length > 0 && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-                  {formData.videos.map((video, index) => (
-                    <div key={index} className="relative group">
-                      <video
-                        src={video.preview}
-                        className="w-full h-24 object-cover rounded-lg"
-                        controls={false}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeVideo(index)}
-                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                      <p className="text-xs text-gray-600 mt-1 truncate">{video.name}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {(formData.images.length > 0 || formData.videos.length > 0) && (
-              <div className="flex items-center space-x-2 p-3 bg-green-50 rounded-lg">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <span className="text-sm text-green-800">
-                  Your uploaded content will be used instead of AI-generated visuals
-                </span>
+          {/* Image Upload */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Images
+            </label>
+            <input
+              type="file"
+              multiple
+              accept="image/*"
+              onChange={(e) => handleFileUpload(e.target.files, 'images')}
+              className="w-full p-2 border border-gray-300 rounded-md"
+            />
+            {formData.user_content.images.length > 0 && (
+              <div className="mt-2 space-y-1">
+                {formData.user_content.images.map((file, index) => (
+                  <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                    <span className="text-sm text-gray-700">{file.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeFile(index, 'images')}
+                      className="text-red-500 hover:text-red-700 text-sm"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+
+          {/* Video Upload */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Videos
+            </label>
+            <input
+              type="file"
+              multiple
+              accept="video/*"
+              onChange={(e) => handleFileUpload(e.target.files, 'videos')}
+              className="w-full p-2 border border-gray-300 rounded-md"
+            />
+            {formData.user_content.videos.length > 0 && (
+              <div className="mt-2 space-y-1">
+                {formData.user_content.videos.map((file, index) => (
+                  <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                    <span className="text-sm text-gray-700">{file.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeFile(index, 'videos')}
+                      className="text-red-500 hover:text-red-700 text-sm"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Custom Caption */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Custom Caption (Optional)
+            </label>
+            <textarea
+              value={formData.user_content.custom_caption}
+              onChange={(e) => handleInputChange('user_content.custom_caption', e.target.value)}
+              placeholder="Leave blank for AI to create optimized captions"
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              rows={3}
+            />
+          </div>
+
+          {/* Custom Hashtags */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Custom Hashtags (Optional)
+            </label>
+            <input
+              type="text"
+              value={formData.user_content.custom_hashtags}
+              onChange={(e) => handleInputChange('user_content.custom_hashtags', e.target.value)}
+              placeholder="Leave blank for AI to optimize hashtags"
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              💡 AI will research trending hashtags for your content and platforms
+            </p>
+          </div>
+        </div>
+
+        {/* A/B Testing Section */}
+        <div className="border border-gray-200 rounded-lg p-4">
+          <button
+            type="button"
+            onClick={() => setShowABTesting(!showABTesting)}
+            className="flex items-center justify-between w-full text-left"
+          >
+            <h3 className="text-lg font-medium text-gray-900">
+              A/B Testing Options
+            </h3>
+            <span className="text-gray-500">
+              {showABTesting ? '−' : '+'}
+            </span>
+          </button>
+
+          {showABTesting && (
+            <div className="mt-4 space-y-4">
+              <div>
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={formData.ab_testing.enabled}
+                    onChange={(e) => handleInputChange('ab_testing.enabled', e.target.checked)}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-gray-700">Enable A/B Testing</span>
+                </label>
+              </div>
+
+              {formData.ab_testing.enabled && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Number of Variations (1-4)
+                    </label>
+                    <select
+                      value={formData.ab_testing.variations}
+                      onChange={(e) => handleInputChange('ab_testing.variations', parseInt(e.target.value))}
+                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value={1}>1 (No A/B Testing)</option>
+                      <option value={2}>2 Variations</option>
+                      <option value={3}>3 Variations</option>
+                      <option value={4}>4 Variations</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Success Metrics to Track
+                    </label>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {successMetrics.map(metric => (
+                        <label key={metric.value} className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={formData.ab_testing.success_metrics.includes(metric.value)}
+                            onChange={() => handleMetricChange(metric.value)}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          <span className="text-sm text-gray-700">{metric.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Advanced Options */}
-        <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
-          <Card>
-            <CollapsibleTrigger asChild>
-              <CardHeader className="cursor-pointer hover:bg-gray-50">
-                <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Settings className="h-5 w-5" />
-                    <span>Advanced Options</span>
-                  </div>
-                  {showAdvanced ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                </CardTitle>
-                <CardDescription>
-                  Optional settings - AI will optimize if left blank
-                </CardDescription>
-              </CardHeader>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="priority">Priority Level</Label>
-                    <Select value={formData.priority_level} onValueChange={(value) => setFormData(prev => ({ ...prev, priority_level: value }))}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Normal (AI default)" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {priorityLevels.map((priority) => (
-                          <SelectItem key={priority.value} value={priority.value}>
-                            <div className="flex items-center space-x-2">
-                              <Badge className={priority.color}>{priority.label}</Badge>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+        <div className="border border-gray-200 rounded-lg p-4">
+          <button
+            type="button"
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className="flex items-center justify-between w-full text-left"
+          >
+            <h3 className="text-lg font-medium text-gray-900">
+              Advanced Options
+            </h3>
+            <span className="text-gray-500">
+              {showAdvanced ? '−' : '+'}
+            </span>
+          </button>
 
-                  <div>
-                    <Label htmlFor="tone">Tone Adjustment</Label>
-                    <Select value={formData.tone_adjustment} onValueChange={(value) => setFormData(prev => ({ ...prev, tone_adjustment: value }))}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Standard (AI default)" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {toneAdjustments.map((tone) => (
-                          <SelectItem key={tone.value} value={tone.value}>
-                            {tone.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
+          {showAdvanced && (
+            <div className="mt-4 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="business-objective">Business Objective</Label>
-                  <Select value={formData.business_objective} onValueChange={(value) => setFormData(prev => ({ ...prev, business_objective: value }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="AI will determine optimal objective" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {businessObjectives.map((objective) => (
-                        <SelectItem key={objective.value} value={objective.value}>
-                          <div>
-                            <div className="font-medium">{objective.label}</div>
-                            <div className="text-xs text-muted-foreground">{objective.description}</div>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="custom-cta">Custom Call-to-Action</Label>
-                  <Input
-                    id="custom-cta"
-                    placeholder="e.g., 'Book a demo today!' (AI will create if blank)"
-                    value={formData.custom_cta}
-                    onChange={(e) => setFormData(prev => ({ ...prev, custom_cta: e.target.value }))}
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="persona">Target Audience Persona</Label>
-                  <Input
-                    id="persona"
-                    placeholder="e.g., 'K-12 educators interested in AI tools' (AI will determine if blank)"
-                    value={formData.persona}
-                    onChange={(e) => setFormData(prev => ({ ...prev, persona: e.target.value }))}
-                  />
-                </div>
-              </CardContent>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
-
-        {/* A/B Testing Options */}
-        <Collapsible open={showABTesting} onOpenChange={setShowABTesting}>
-          <Card>
-            <CollapsibleTrigger asChild>
-              <CardHeader className="cursor-pointer hover:bg-gray-50">
-                <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Target className="h-5 w-5" />
-                    <span>A/B Testing & Success Metrics</span>
-                  </div>
-                  {showABTesting ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                </CardTitle>
-                <CardDescription>
-                  Configure content variations and success tracking
-                </CardDescription>
-              </CardHeader>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="variations">Number of Content Variations</Label>
-                  <Select 
-                    value={formData.content_variations.toString()} 
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, content_variations: parseInt(value) }))}
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tone
+                  </label>
+                  <select
+                    value={formData.advanced_options.tone}
+                    onChange={(e) => handleInputChange('advanced_options.tone', e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">1 (Single version)</SelectItem>
-                      <SelectItem value="2">2 (A/B test)</SelectItem>
-                      <SelectItem value="3">3 (A/B/C test)</SelectItem>
-                      <SelectItem value="4">4 (Multi-variant test)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    AI will create different versions to test performance
-                  </p>
+                    <option value="">Leave blank for AI to optimize</option>
+                    {tones.map(tone => (
+                      <option key={tone.value} value={tone.value}>
+                        {tone.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="target-engagement">Target Engagement Rate (%)</Label>
-                    <Input
-                      id="target-engagement"
-                      type="number"
-                      placeholder="e.g., 5.5"
-                      value={formData.success_metrics.target_engagement_rate}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        success_metrics: { ...prev.success_metrics, target_engagement_rate: e.target.value }
-                      }))}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="target-reach">Target Reach</Label>
-                    <Input
-                      id="target-reach"
-                      type="number"
-                      placeholder="e.g., 10000"
-                      value={formData.success_metrics.target_reach}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        success_metrics: { ...prev.success_metrics, target_reach: e.target.value }
-                      }))}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="target-clicks">Target Clicks</Label>
-                    <Input
-                      id="target-clicks"
-                      type="number"
-                      placeholder="e.g., 500"
-                      value={formData.success_metrics.target_clicks}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        success_metrics: { ...prev.success_metrics, target_clicks: e.target.value }
-                      }))}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="target-conversions">Target Conversions</Label>
-                    <Input
-                      id="target-conversions"
-                      type="number"
-                      placeholder="e.g., 50"
-                      value={formData.success_metrics.target_conversions}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        success_metrics: { ...prev.success_metrics, target_conversions: e.target.value }
-                      }))}
-                    />
-                  </div>
-                </div>
-
-                <div className="p-3 bg-blue-50 rounded-lg">
-                  <p className="text-sm text-blue-800">
-                    <BarChart3 className="h-4 w-4 inline mr-1" />
-                    AI will set realistic targets based on your historical performance if left blank
-                  </p>
-                </div>
-              </CardContent>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
-
-        {/* Scheduling Options */}
-        <Collapsible open={showScheduling} onOpenChange={setShowScheduling}>
-          <Card>
-            <CollapsibleTrigger asChild>
-              <CardHeader className="cursor-pointer hover:bg-gray-50">
-                <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Calendar className="h-5 w-5" />
-                    <span>Scheduling Options</span>
-                  </div>
-                  {showScheduling ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                </CardTitle>
-                <CardDescription>
-                  Schedule your content for optimal posting times
-                </CardDescription>
-              </CardHeader>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor="scheduled-time">Scheduled Publish Time</Label>
-                  <Input
-                    id="scheduled-time"
-                    type="datetime-local"
-                    value={formData.scheduled_publish_time}
-                    onChange={(e) => setFormData(prev => ({ ...prev, scheduled_publish_time: e.target.value }))}
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Audience Persona
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.advanced_options.audience_persona}
+                    onChange={(e) => handleInputChange('advanced_options.audience_persona', e.target.value)}
+                    placeholder="Leave blank for AI to optimize"
+                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    <Zap className="h-3 w-3 inline mr-1" />
-                    AI will suggest optimal posting times if left blank
-                  </p>
                 </div>
+              </div>
 
-                <div className="p-3 bg-green-50 rounded-lg">
-                  <p className="text-sm text-green-800">
-                    <Calendar className="h-4 w-4 inline mr-1" />
-                    Content will be generated and queued for review before scheduled publish time
-                  </p>
-                </div>
-              </CardContent>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Custom Call-to-Action
+                </label>
+                <input
+                  type="text"
+                  value={formData.advanced_options.custom_cta}
+                  onChange={(e) => handleInputChange('advanced_options.custom_cta', e.target.value)}
+                  placeholder="Leave blank for AI to optimize"
+                  className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Scheduling
+                </label>
+                <select
+                  value={formData.advanced_options.scheduling}
+                  onChange={(e) => handleInputChange('advanced_options.scheduling', e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="optimal_time">Optimal Time (AI Recommended)</option>
+                  <option value="immediate">Post Immediately</option>
+                  <option value="custom">Custom Schedule</option>
+                </select>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Submit Status */}
+        {submitStatus && (
+          <div className={`p-4 rounded-md ${
+            submitStatus.type === 'success' 
+              ? 'bg-green-50 text-green-800 border border-green-200' 
+              : 'bg-red-50 text-red-800 border border-red-200'
+          }`}>
+            {submitStatus.message}
+          </div>
+        )}
 
         {/* Submit Button */}
-        <div className="flex justify-end space-x-4">
-          <Button type="submit" disabled={isSubmitting || !formData.topic.trim()}>
-            {isSubmitting ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                Creating Request...
-              </>
-            ) : (
-              <>
-                <Send className="h-4 w-4 mr-2" />
-                Create Content Request
-              </>
-            )}
-          </Button>
+        <div className="flex justify-end">
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className={`px-6 py-3 rounded-md font-medium transition-colors ${
+              isSubmitting
+                ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
+                : 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'
+            }`}
+          >
+            {isSubmitting ? 'Creating Content...' : 'Create Content Request'}
+          </button>
         </div>
       </form>
     </div>
