@@ -5,7 +5,6 @@ const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey )
 
-// Content Request Functions
 export const createContentRequest = async (requestData) => {
   try {
     const { data, error } = await supabase
@@ -22,57 +21,6 @@ export const createContentRequest = async (requestData) => {
   }
 }
 
-export const updateContentRequestStatus = async (id, status, workflowData = null) => {
-  try {
-    const updateData = { status }
-    if (workflowData) {
-      updateData.workflow_data = workflowData
-    }
-
-    const { data, error } = await supabase
-      .from('content_requests')
-      .update(updateData)
-      .eq('id', id)
-      .select()
-      .single()
-
-    if (error) throw error
-    return { success: true, data }
-  } catch (error) {
-    console.error('Error updating content request:', error)
-    return { success: false, error: error.message }
-  }
-}
-
-export const getContentRequests = async (filters = {}) => {
-  try {
-    let query = supabase
-      .from('content_requests')
-      .select('*')
-      .order('created_at', { ascending: false })
-
-    // Apply filters
-    if (filters.status) {
-      query = query.eq('status', filters.status)
-    }
-    if (filters.content_type) {
-      query = query.eq('content_type', filters.content_type)
-    }
-    if (filters.priority) {
-      query = query.eq('priority', filters.priority)
-    }
-
-    const { data, error } = await query
-
-    if (error) throw error
-    return { success: true, data }
-  } catch (error) {
-    console.error('Error fetching content requests:', error)
-    return { success: false, error: error.message }
-  }
-}
-
-// Workflow Functions
 export const createWorkflowExecution = async (workflowData) => {
   try {
     const { data, error } = await supabase
@@ -83,8 +31,7 @@ export const createWorkflowExecution = async (workflowData) => {
         workflow_type: workflowData.workflowType,
         platform_requirements: workflowData.platformRequirements,
         estimated_time: workflowData.estimatedTime,
-        status: 'pending',
-        blotato_config: workflowData.blotato
+        status: 'pending'
       }])
       .select()
       .single()
@@ -97,84 +44,7 @@ export const createWorkflowExecution = async (workflowData) => {
   }
 }
 
-export const updateWorkflowExecution = async (id, updateData) => {
-  try {
-    const { data, error } = await supabase
-      .from('workflow_executions')
-      .update(updateData)
-      .eq('id', id)
-      .select()
-      .single()
-
-    if (error) throw error
-    return { success: true, data }
-  } catch (error) {
-    console.error('Error updating workflow execution:', error)
-    return { success: false, error: error.message }
-  }
-}
-
-// Blotato Integration Functions
-export const saveBlotato Results = async (workflowExecutionId, blotato Results) => {
-  try {
-    const { data, error } = await supabase
-      .from('blotato_results')
-      .insert([{
-        workflow_execution_id: workflowExecutionId,
-        platform_results: blotato Results.results,
-        summary: blotato Results.summary,
-        success: blotato Results.success,
-        error_message: blotato Results.error || null
-      }])
-      .select()
-      .single()
-
-    if (error) throw error
-    return { success: true, data }
-  } catch (error) {
-    console.error('Error saving Blotato results:', error)
-    return { success: false, error: error.message }
-  }
-}
-
-export const getBlotato Results = async (workflowExecutionId) => {
-  try {
-    const { data, error } = await supabase
-      .from('blotato_results')
-      .select('*')
-      .eq('workflow_execution_id', workflowExecutionId)
-      .single()
-
-    if (error) throw error
-    return { success: true, data }
-  } catch (error) {
-    console.error('Error fetching Blotato results:', error)
-    return { success: false, error: error.message }
-  }
-}
-
-// Account Management Functions
-export const saveBlotato AccountIds = async (accountIds) => {
-  try {
-    const { data, error } = await supabase
-      .from('blotato_accounts')
-      .upsert([{
-        id: 1, // Single row for account IDs
-        account_ids: accountIds,
-        updated_at: new Date().toISOString()
-      }])
-      .select()
-      .single()
-
-    if (error) throw error
-    return { success: true, data }
-  } catch (error) {
-    console.error('Error saving Blotato account IDs:', error)
-    return { success: false, error: error.message }
-  }
-}
-
-export const getBlotato AccountIds = async () => {
+export const getBlotatoAccountIds = async () => {
   try {
     const { data, error } = await supabase
       .from('blotato_accounts')
@@ -190,55 +60,23 @@ export const getBlotato AccountIds = async () => {
   }
 }
 
-// Analytics Functions
-export const getContentAnalytics = async (dateRange = 30) => {
+export const saveBlotatoResults = async (workflowExecutionId, blotatoResults) => {
   try {
-    const startDate = new Date()
-    startDate.setDate(startDate.getDate() - dateRange)
-
     const { data, error } = await supabase
-      .from('content_requests')
-      .select(`
-        id,
-        content_type,
-        status,
-        priority,
-        created_at,
-        platforms,
-        workflow_executions (
-          id,
-          status,
-          estimated_time,
-          completed_at,
-          blotato_results (
-            success,
-            summary
-          )
-        )
-      `)
-      .gte('created_at', startDate.toISOString())
-      .order('created_at', { ascending: false })
+      .from('blotato_results')
+      .insert([{
+        workflow_execution_id: workflowExecutionId,
+        platform_results: blotatoResults.results,
+        summary: blotatoResults.summary,
+        success: blotatoResults.success
+      }])
+      .select()
+      .single()
 
     if (error) throw error
     return { success: true, data }
   } catch (error) {
-    console.error('Error fetching content analytics:', error)
-    return { success: false, error: error.message }
-  }
-}
-
-// Utility Functions
-export const testSupabaseConnection = async () => {
-  try {
-    const { data, error } = await supabase
-      .from('content_requests')
-      .select('count')
-      .limit(1)
-
-    if (error) throw error
-    return { success: true, message: 'Supabase connection successful' }
-  } catch (error) {
-    console.error('Supabase connection test failed:', error)
+    console.error('Error saving Blotato results:', error)
     return { success: false, error: error.message }
   }
 }
