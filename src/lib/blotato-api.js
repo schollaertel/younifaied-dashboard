@@ -6,7 +6,7 @@ class BlotAtoAPI {
     this.apiKey = apiKey;
     this.baseURL = 'https://backend.blotato.com/v2';
     this.headers = {
-      'Authorization': `Bearer ${apiKey}`,
+      'Authorization': `Bearer blt_MdHTJ3TWQVEf5peRdANgKs7N/TkvOZt8h8C/OPylLas=`,
       'Content-Type': 'application/json'
     };
   }
