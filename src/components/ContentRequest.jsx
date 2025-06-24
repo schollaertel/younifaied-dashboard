@@ -124,7 +124,8 @@ export function ContentRequest() {
       console.log("handleSubmit: Response from Supabase:", result);
 
       if (result.error) {
-        // Use the error message from Supabase
+        // Log the full error object for detailed debugging
+        console.error("handleSubmit: Supabase error details:", result.error);
         throw new Error(result.error.message || 'An unknown error occurred during content request creation.');
       }
 
@@ -305,4 +306,3 @@ export function ContentRequest() {
     </div>
   );
 }
-
