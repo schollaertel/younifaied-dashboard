@@ -374,6 +374,5 @@ class WorkflowRouter {
   }
 }
 
-// Export for use in other modules
 export default WorkflowRouter;
 
