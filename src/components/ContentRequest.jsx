@@ -209,9 +209,9 @@ export function ContentRequest() {
       }
 
       // Step 6: Process with Blotato API (if API key is available)
-      const blotato ApiKey = import.meta.env.VITE_BLOTATO_API_KEY
-      if (blotato ApiKey) {
-        const blotato API = new BlotAtoAPI(blotato ApiKey)
+      const blotatoApiKey = import.meta.env.VITE_BLOTATO_API_KEY
+      if (blotatoApiKey) {
+        const blotatoAPI = new BlotAtoAPI(blotatoApiKey)
         const blotato Result = await blotato API.processContentRequest(routingResult.payload)
         
         // Save Blotato results
