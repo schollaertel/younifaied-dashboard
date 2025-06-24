@@ -104,11 +104,12 @@ export function ContentRequest() {
             tone: formData.tone,
             status: 'pending',
             created_at: new Date().toISOString(),
-            // Note: File uploads would need separate handling with Supabase Storage
+            // User-provided content takes precedence over AI generation
             has_images: formData.images.length > 0,
             has_videos: formData.videos.length > 0,
             image_count: formData.images.length,
-            video_count: formData.videos.length
+            video_count: formData.videos.length,
+            user_provided_content: formData.images.length > 0 || formData.videos.length > 0
           }
         ])
         .select()
@@ -217,16 +218,19 @@ export function ContentRequest() {
           </CardContent>
         </Card>
 
-        {/* Reference Files */}
+        {/* User Content Uploads - Primary Content */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Upload className="h-5 w-5 text-primary" />
-              <span>Reference Images (Optional)</span>
+              <span>Upload Your Images</span>
             </CardTitle>
+            <CardDescription>
+              Upload your own images to use in the content. User-uploaded images will be used instead of AI-generated ones.
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
+            <div className="relative border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
               <Image className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <div className="space-y-2">
                 <p className="text-sm font-medium">Click to upload images or drag and drop</p>
@@ -237,17 +241,18 @@ export function ContentRequest() {
                 multiple
                 accept="image/*"
                 onChange={(e) => handleFileUpload(e.target.files, 'images')}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
               />
             </div>
             
             {formData.images.length > 0 && (
               <div className="mt-4 space-y-2">
+                <p className="text-sm font-medium text-green-600">✓ Your images will be used in the content</p>
                 {formData.images.map((file, index) => (
                   <div key={index} className="flex items-center justify-between p-2 bg-muted rounded">
                     <div className="flex items-center space-x-2">
                       <FileImage className="h-4 w-4 text-blue-500" />
-                      <span className="text-sm font-medium">{file.name}</span>
+                      <span className="text-sm font-medium truncate max-w-[200px]">{file.name}</span>
                       <span className="text-xs text-muted-foreground">({formatFileSize(file.size)})</span>
                     </div>
                     <Button
@@ -269,11 +274,14 @@ export function ContentRequest() {
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Video className="h-5 w-5 text-primary" />
-              <span>Reference Videos (Optional)</span>
+              <span>Upload Your Videos</span>
             </CardTitle>
+            <CardDescription>
+              Upload your own videos to use in the content. User-uploaded videos will be used instead of AI-generated ones.
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
+            <div className="relative border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
               <Video className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <div className="space-y-2">
                 <p className="text-sm font-medium">Click to upload videos or drag and drop</p>
@@ -284,17 +292,18 @@ export function ContentRequest() {
                 multiple
                 accept="video/*"
                 onChange={(e) => handleFileUpload(e.target.files, 'videos')}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
               />
             </div>
             
             {formData.videos.length > 0 && (
               <div className="mt-4 space-y-2">
+                <p className="text-sm font-medium text-green-600">✓ Your videos will be used in the content</p>
                 {formData.videos.map((file, index) => (
                   <div key={index} className="flex items-center justify-between p-2 bg-muted rounded">
                     <div className="flex items-center space-x-2">
                       <FileVideo className="h-4 w-4 text-purple-500" />
-                      <span className="text-sm font-medium">{file.name}</span>
+                      <span className="text-sm font-medium truncate max-w-[200px]">{file.name}</span>
                       <span className="text-xs text-muted-foreground">({formatFileSize(file.size)})</span>
                     </div>
                     <Button
@@ -330,7 +339,7 @@ export function ContentRequest() {
                   <SelectItem key={persona.value} value={persona.value}>
                     <div className="flex flex-col">
                       <span className="font-medium">{persona.label}</span>
-                      <span className="text-xs text-muted-foreground break-words whitespace-normal">
+                      <span className="text-xs text-muted-foreground max-w-[250px] break-words">
                         {persona.description}
                       </span>
                     </div>
