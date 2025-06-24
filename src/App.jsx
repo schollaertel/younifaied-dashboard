@@ -1,3 +1,4 @@
+import './index.css'; // Add this line
 import { useState } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Auth } from './components/Auth'; // Assuming Auth.jsx is in components
