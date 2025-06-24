@@ -1,24 +1,29 @@
 'use client'
 
 import { useState } from 'react'
-import { createContentRequest, createWorkflowExecution, getBlotatoAccountIds } from '@/lib/supabase'
-import { supabase } from '@/lib/supabase'
-import WorkflowRouter from '@/lib/workflow-router'
-import BlotatoAPI from '@/lib/blotato-api'
+import { useAuth } from '../contexts/AuthContext'
+import { createContentRequest, createWorkflowExecution, getBlotatoAccountIds } from '../lib/supabase'
+import WorkflowRouter from '../lib/workflow-router'
+import { BlotatoAPI } from '../lib/blotato-api'
 
-export default function ContentRequest() {
+export function ContentRequest() {
+  const { user } = useAuth()
   const [formData, setFormData] = useState({
     content_type: '',
     platforms: [],
+    topic: '',
     content_description: '',
+    primary_keywords: '',
+    secondary_keywords: '',
+    long_tail_keywords: '',
     business_objective: '',
     priority: 'normal',
     inspiration_link: '',
     user_content: {
       images: [],
       videos: [],
-      custom_caption: '',
-      custom_hashtags: ''
+      text_content: '',
+      brand_assets: []
     },
     ab_testing: {
       enabled: false,
@@ -26,69 +31,16 @@ export default function ContentRequest() {
       success_metrics: []
     },
     advanced_options: {
-      tone: '',
-      audience_persona: '',
+      tone: 'casual',
       custom_cta: '',
-      scheduling: 'optimal_time'
+      audience_persona: '',
+      scheduling: 'optimal'
     }
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [submitStatus, setSubmitStatus] = useState(null)
-  const [showABTesting, setShowABTesting] = useState(false)
   const [showAdvanced, setShowAdvanced] = useState(false)
-
-  const contentTypes = [
-    { value: 'social_post', label: 'Social Media Post' },
-    { value: 'video_script', label: 'Video Script' },
-    { value: 'blog_post', label: 'Blog Post' },
-    { value: 'email_campaign', label: 'Email Campaign' },
-    { value: 'infographic', label: 'Infographic' }
-  ]
-
-  const platforms = [
-    { value: 'instagram', label: 'Instagram' },
-    { value: 'facebook', label: 'Facebook' },
-    { value: 'twitter', label: 'Twitter/X' },
-    { value: 'linkedin', label: 'LinkedIn' },
-    { value: 'youtube', label: 'YouTube' },
-    { value: 'tiktok', label: 'TikTok' },
-    { value: 'pinterest', label: 'Pinterest' }
-  ]
-
-  const businessObjectives = [
-    { value: 'engagement', label: 'Increase Engagement' },
-    { value: 'reach', label: 'Expand Reach' },
-    { value: 'conversions', label: 'Drive Conversions' },
-    { value: 'brand_awareness', label: 'Build Brand Awareness' },
-    { value: 'lead_generation', label: 'Generate Leads' },
-    { value: 'customer_retention', label: 'Retain Customers' }
-  ]
-
-  const priorities = [
-    { value: 'low', label: 'Low', color: 'bg-gray-100 text-gray-800' },
-    { value: 'normal', label: 'Normal', color: 'bg-blue-100 text-blue-800' },
-    { value: 'high', label: 'High', color: 'bg-yellow-100 text-yellow-800' },
-    { value: 'urgent', label: 'Urgent', color: 'bg-red-100 text-red-800' }
-  ]
-
-  const tones = [
-    { value: 'professional', label: 'Professional' },
-    { value: 'casual', label: 'Casual' },
-    { value: 'playful', label: 'Playful' },
-    { value: 'urgent', label: 'Urgent' },
-    { value: 'inspirational', label: 'Inspirational' },
-    { value: 'educational', label: 'Educational' }
-  ]
-
-  const successMetrics = [
-    { value: 'engagement_rate', label: 'Engagement Rate' },
-    { value: 'reach', label: 'Reach' },
-    { value: 'clicks', label: 'Clicks' },
-    { value: 'conversions', label: 'Conversions' },
-    { value: 'shares', label: 'Shares' },
-    { value: 'comments', label: 'Comments' }
-  ]
+  const [showABTesting, setShowABTesting] = useState(false)
 
   const handleInputChange = (field, value) => {
     if (field.includes('.')) {
@@ -108,141 +60,124 @@ export default function ContentRequest() {
     }
   }
 
-  const handlePlatformChange = (platform) => {
+  const handlePlatformChange = (platform, checked) => {
     setFormData(prev => ({
       ...prev,
-      platforms: prev.platforms.includes(platform)
-        ? prev.platforms.filter(p => p !== platform)
-        : [...prev.platforms, platform]
+      platforms: checked 
+        ? [...prev.platforms, platform]
+        : prev.platforms.filter(p => p !== platform)
     }))
   }
 
-  const handleMetricChange = (metric) => {
-    setFormData(prev => ({
-      ...prev,
-      ab_testing: {
-        ...prev.ab_testing,
-        success_metrics: prev.ab_testing.success_metrics.includes(metric)
-          ? prev.ab_testing.success_metrics.filter(m => m !== metric)
-          : [...prev.ab_testing.success_metrics, metric]
-      }
-    }))
-  }
-
-  const handleFileUpload = (files, type) => {
-    const fileArray = Array.from(files)
+  const handleFileUpload = (type, files) => {
     setFormData(prev => ({
       ...prev,
       user_content: {
         ...prev.user_content,
-        [type]: [...prev.user_content[type], ...fileArray]
-      }
-    }))
-  }
-
-  const removeFile = (index, type) => {
-    setFormData(prev => ({
-      ...prev,
-      user_content: {
-        ...prev.user_content,
-        [type]: prev.user_content[type].filter((_, i) => i !== index)
+        [type]: Array.from(files)
       }
     }))
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    
+    if (!user) {
+      alert('Please log in to submit content requests')
+      return
+    }
+
+    if (!formData.content_type || formData.platforms.length === 0 || !formData.topic || !formData.content_description) {
+      alert('Please fill in all required fields: Content Type, Platforms, Topic, and Content Description')
+      return
+    }
+
     setIsSubmitting(true)
-    setSubmitStatus(null)
 
     try {
-      // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser()
-      
-      if (userError || !user) {
-        throw new Error('You must be logged in to create content requests')
-      }
-
-      // Validate required fields
-      if (!formData.content_type || !formData.content_description || formData.platforms.length === 0) {
-        throw new Error('Please fill in all required fields')
-      }
-
-      // Create content request in database with real user data
-      const requestResult = await createContentRequest({
+      // Create content request with user data
+      const requestData = {
+        user_id: user.id,
+        user_email: user.email,
         content_type: formData.content_type,
         platforms: formData.platforms,
+        topic: formData.topic,
         content_description: formData.content_description,
+        primary_keywords: formData.primary_keywords,
+        secondary_keywords: formData.secondary_keywords,
+        long_tail_keywords: formData.long_tail_keywords,
         business_objective: formData.business_objective,
         priority: formData.priority,
+        inspiration_link: formData.inspiration_link,
         user_content: formData.user_content,
         ab_testing: formData.ab_testing,
         advanced_options: formData.advanced_options,
-        inspiration_link: formData.inspiration_link,
-        status: 'pending',
-        user_id: user.id,
-        user_email: user.email
-      })
+        status: 'pending'
+      }
 
-      if (!requestResult.success) {
-        throw new Error(requestResult.error)
+      const contentResult = await createContentRequest(requestData)
+      
+      if (!contentResult.success) {
+        throw new Error(contentResult.error)
       }
 
       // Initialize workflow router
-      const router = new WorkflowRouter()
-      
-      // Route the content request
-      const routingResult = router.routeContentRequest({
-        ...formData,
-        id: requestResult.data.id
+      const workflowRouter = new WorkflowRouter()
+      const routingResult = workflowRouter.routeContentRequest({
+        contentType: formData.content_type,
+        platforms: formData.platforms,
+        businessObjective: formData.business_objective,
+        priority: formData.priority
       })
 
       // Create workflow execution record
-      const workflowResult = await createWorkflowExecution({
-        content_request_id: requestResult.data.id,
+      const workflowData = {
+        content_request_id: contentResult.data.id,
         workflowId: routingResult.workflowId,
         workflowType: routingResult.workflowType,
         platformRequirements: routingResult.platformRequirements,
         estimatedTime: routingResult.estimatedTime
-      })
+      }
 
+      const workflowResult = await createWorkflowExecution(workflowData)
+      
       if (!workflowResult.success) {
-        throw new Error(workflowResult.error)
+        console.error('Workflow execution creation failed:', workflowResult.error)
       }
 
       // Get Blotato account IDs
-      const accountIdsResult = await getBlotatoAccountIds()
+      const accountResult = await getBlotatoAccountIds()
       
-      // Process with Blotato API if API key is available
-      const blotatoApiKey = import.meta.env.VITE_BLOTATO_API_KEY
-      if (blotatoApiKey) {
-        const blotatoAPI = new BlotatoAPI(blotatoApiKey)
-        const blotatoResult = await blotatoAPI.processContentRequest(routingResult.payload)
-        
-        // Save Blotato results
-        if (blotatoResult.success) {
-          console.log('Blotato processing completed:', blotatoResult.summary)
+      if (accountResult.success) {
+        // Initialize Blotato API
+        const blotatoApiKey = import.meta.env.VITE_BLOTATO_API_KEY
+        if (blotatoApiKey) {
+          const blotatoAPI = new BlotatoAPI(blotatoApiKey)
+          const blotatoResult = await blotatoAPI.processContentRequest(routingResult.payload)
+          
+          if (blotatoResult.success) {
+            console.log('Content generation initiated:', blotatoResult)
+          }
         }
       }
-
-      setSubmitStatus({
-        type: 'success',
-        message: `Content request submitted successfully! Estimated completion time: ${routingResult.estimatedTime} minutes.`
-      })
 
       // Reset form
       setFormData({
         content_type: '',
         platforms: [],
+        topic: '',
         content_description: '',
+        primary_keywords: '',
+        secondary_keywords: '',
+        long_tail_keywords: '',
         business_objective: '',
         priority: 'normal',
         inspiration_link: '',
         user_content: {
           images: [],
           videos: [],
-          custom_caption: '',
-          custom_hashtags: ''
+          text_content: '',
+          brand_assets: []
         },
         ab_testing: {
           enabled: false,
@@ -250,30 +185,61 @@ export default function ContentRequest() {
           success_metrics: []
         },
         advanced_options: {
-          tone: '',
-          audience_persona: '',
+          tone: 'casual',
           custom_cta: '',
-          scheduling: 'optimal_time'
+          audience_persona: '',
+          scheduling: 'optimal'
         }
       })
 
+      alert('Content request submitted successfully!')
+
     } catch (error) {
-      console.error('Submission error:', error)
-      setSubmitStatus({
-        type: 'error',
-        message: error.message || 'Failed to submit content request. Please try again.'
-      })
+      console.error('Error submitting content request:', error)
+      alert('Error submitting request: ' + error.message)
     } finally {
       setIsSubmitting(false)
     }
   }
 
+  const resetForm = () => {
+    setFormData({
+      content_type: '',
+      platforms: [],
+      topic: '',
+      content_description: '',
+      primary_keywords: '',
+      secondary_keywords: '',
+      long_tail_keywords: '',
+      business_objective: '',
+      priority: 'normal',
+      inspiration_link: '',
+      user_content: {
+        images: [],
+        videos: [],
+        text_content: '',
+        brand_assets: []
+      },
+      ab_testing: {
+        enabled: false,
+        variations: 1,
+        success_metrics: []
+      },
+      advanced_options: {
+        tone: 'casual',
+        custom_cta: '',
+        audience_persona: '',
+        scheduling: 'optimal'
+      }
+    })
+  }
+
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-lg">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">Create Content Request</h2>
+      <h2 className="text-2xl font-bold text-gray-900 mb-6">Request Content Creation</h2>
       
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Content Type Selection */}
+        {/* Content Type */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Content Type *
@@ -284,33 +250,49 @@ export default function ContentRequest() {
             className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             required
           >
-            <option value="">Select content type...</option>
-            {contentTypes.map(type => (
-              <option key={type.value} value={type.value}>
-                {type.label}
-              </option>
-            ))}
+            <option value="">Select content type</option>
+            <option value="social_post">Social Media Post</option>
+            <option value="blog_article">Blog Article</option>
+            <option value="email_campaign">Email Campaign</option>
+            <option value="video_script">Video Script</option>
+            <option value="infographic">Infographic</option>
           </select>
         </div>
 
-        {/* Platform Selection */}
+        {/* Platforms */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Platforms * (Select all that apply)
+            Target Platforms *
           </label>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {platforms.map(platform => (
-              <label key={platform.value} className="flex items-center space-x-2 cursor-pointer">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {['Instagram', 'Facebook', 'LinkedIn', 'Twitter', 'YouTube', 'TikTok'].map(platform => (
+              <label key={platform} className="flex items-center space-x-2">
                 <input
                   type="checkbox"
-                  checked={formData.platforms.includes(platform.value)}
-                  onChange={() => handlePlatformChange(platform.value)}
+                  checked={formData.platforms.includes(platform.toLowerCase())}
+                  onChange={(e) => handlePlatformChange(platform.toLowerCase(), e.target.checked)}
                   className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
-                <span className="text-sm text-gray-700">{platform.label}</span>
+                <span className="text-sm text-gray-700">{platform}</span>
               </label>
             ))}
           </div>
+        </div>
+
+        {/* Topic */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Topic *
+          </label>
+          <input
+            type="text"
+            value={formData.topic}
+            onChange={(e) => handleInputChange('topic', e.target.value)}
+            placeholder="Main topic/theme (e.g., 'AI in Education', 'Productivity Tips')"
+            className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            required
+          />
+          <p className="text-xs text-gray-500 mt-1">Short, focused topic for image mapping and content categorization</p>
         </div>
 
         {/* Content Description */}
@@ -321,14 +303,97 @@ export default function ContentRequest() {
           <textarea
             value={formData.content_description}
             onChange={(e) => handleInputChange('content_description', e.target.value)}
-            placeholder="Describe what content you want created... (Leave blank for AI to optimize)"
-            className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Detailed description of what you want to create..."
             rows={4}
+            className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             required
           />
-          <p className="text-xs text-gray-500 mt-1">
-            💡 AI will optimize and expand your description for each platform
-          </p>
+        </div>
+
+        {/* Keywords Section */}
+        <div className="bg-gray-50 p-4 rounded-md">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Keyword Focus</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Primary Keywords
+              </label>
+              <input
+                type="text"
+                value={formData.primary_keywords}
+                onChange={(e) => handleInputChange('primary_keywords', e.target.value)}
+                placeholder="main keyword, key phrase"
+                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <p className="text-xs text-gray-500 mt-1">1-3 main keywords (comma separated)</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Secondary Keywords
+              </label>
+              <input
+                type="text"
+                value={formData.secondary_keywords}
+                onChange={(e) => handleInputChange('secondary_keywords', e.target.value)}
+                placeholder="related terms, synonyms"
+                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <p className="text-xs text-gray-500 mt-1">Supporting keywords</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Long-tail Keywords
+              </label>
+              <input
+                type="text"
+                value={formData.long_tail_keywords}
+                onChange={(e) => handleInputChange('long_tail_keywords', e.target.value)}
+                placeholder="specific phrases, questions"
+                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <p className="text-xs text-gray-500 mt-1">Specific, longer phrases</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Business Objective */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Business Objective
+          </label>
+          <select
+            value={formData.business_objective}
+            onChange={(e) => handleInputChange('business_objective', e.target.value)}
+            className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="">Select objective</option>
+            <option value="brand_awareness">Brand Awareness</option>
+            <option value="lead_generation">Lead Generation</option>
+            <option value="engagement">Engagement</option>
+            <option value="conversions">Conversions</option>
+            <option value="education">Education</option>
+            <option value="community_building">Community Building</option>
+          </select>
+        </div>
+
+        {/* Priority */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Priority Level
+          </label>
+          <select
+            value={formData.priority}
+            onChange={(e) => handleInputChange('priority', e.target.value)}
+            className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="low">Low Priority</option>
+            <option value="normal">Normal Priority</option>
+            <option value="high">High Priority</option>
+            <option value="urgent">Urgent</option>
+          </select>
         </div>
 
         {/* Inspiration Link */}
@@ -343,154 +408,57 @@ export default function ContentRequest() {
             placeholder="Link to content you want to rip off and make better"
             className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
-          <p className="text-xs text-gray-500 mt-1">
-            🎯 Share a link to content that inspired you - we'll analyze it and make it better
-          </p>
-        </div>
-
-        {/* Business Objective & Priority */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Business Objective
-            </label>
-            <select
-              value={formData.business_objective}
-              onChange={(e) => handleInputChange('business_objective', e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">Leave blank for AI to optimize</option>
-              {businessObjectives.map(obj => (
-                <option key={obj.value} value={obj.value}>
-                  {obj.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Priority Level
-            </label>
-            <div className="flex space-x-2">
-              {priorities.map(priority => (
-                <button
-                  key={priority.value}
-                  type="button"
-                  onClick={() => handleInputChange('priority', priority.value)}
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    formData.priority === priority.value
-                      ? priority.color
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
-                >
-                  {priority.label}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
 
         {/* User Content Upload */}
-        <div className="border border-gray-200 rounded-lg p-4">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">
-            Upload Your Content (Optional)
-          </h3>
-          <p className="text-sm text-gray-600 mb-4">
-            🎯 User content takes priority over AI-generated content
-          </p>
+        <div className="bg-blue-50 p-4 rounded-md">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Your Content (Optional)</h3>
+          <p className="text-sm text-gray-600 mb-4">Upload your own images, videos, or provide text content. User content takes priority over AI generation.</p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Images
+              </label>
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={(e) => handleFileUpload('images', e.target.files)}
+                className="w-full p-2 border border-gray-300 rounded-md"
+              />
+            </div>
 
-          {/* Image Upload */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Images
-            </label>
-            <input
-              type="file"
-              multiple
-              accept="image/*"
-              onChange={(e) => handleFileUpload(e.target.files, 'images')}
-              className="w-full p-2 border border-gray-300 rounded-md"
-            />
-            {formData.user_content.images.length > 0 && (
-              <div className="mt-2 space-y-1">
-                {formData.user_content.images.map((file, index) => (
-                  <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                    <span className="text-sm text-gray-700">{file.name}</span>
-                    <button
-                      type="button"
-                      onClick={() => removeFile(index, 'images')}
-                      className="text-red-500 hover:text-red-700 text-sm"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Videos
+              </label>
+              <input
+                type="file"
+                multiple
+                accept="video/*"
+                onChange={(e) => handleFileUpload('videos', e.target.files)}
+                className="w-full p-2 border border-gray-300 rounded-md"
+              />
+            </div>
           </div>
 
-          {/* Video Upload */}
-          <div className="mb-4">
+          <div className="mt-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Videos
-            </label>
-            <input
-              type="file"
-              multiple
-              accept="video/*"
-              onChange={(e) => handleFileUpload(e.target.files, 'videos')}
-              className="w-full p-2 border border-gray-300 rounded-md"
-            />
-            {formData.user_content.videos.length > 0 && (
-              <div className="mt-2 space-y-1">
-                {formData.user_content.videos.map((file, index) => (
-                  <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                    <span className="text-sm text-gray-700">{file.name}</span>
-                    <button
-                      type="button"
-                      onClick={() => removeFile(index, 'videos')}
-                      className="text-red-500 hover:text-red-700 text-sm"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Custom Caption */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Custom Caption (Optional)
+              Text Content
             </label>
             <textarea
-              value={formData.user_content.custom_caption}
-              onChange={(e) => handleInputChange('user_content.custom_caption', e.target.value)}
-              placeholder="Leave blank for AI to create optimized captions"
-              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              value={formData.user_content.text_content}
+              onChange={(e) => handleInputChange('user_content.text_content', e.target.value)}
+              placeholder="Any specific text, quotes, or copy you want to include..."
               rows={3}
-            />
-          </div>
-
-          {/* Custom Hashtags */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Custom Hashtags (Optional)
-            </label>
-            <input
-              type="text"
-              value={formData.user_content.custom_hashtags}
-              onChange={(e) => handleInputChange('user_content.custom_hashtags', e.target.value)}
-              placeholder="Leave blank for AI to optimize hashtags"
               className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
         </div>
 
         {/* A/B Testing Section */}
-        <div className="border border-gray-200 rounded-lg p-4">
+        <div className="border border-gray-200 rounded-md p-4">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-medium text-gray-900">A/B Testing</h3>
             <button
@@ -498,23 +466,21 @@ export default function ContentRequest() {
               onClick={() => setShowABTesting(!showABTesting)}
               className="text-blue-600 hover:text-blue-800 text-sm"
             >
-              {showABTesting ? 'Hide' : 'Show'} Options
+              {showABTesting ? 'Hide Options' : 'Show Options'}
             </button>
           </div>
 
           {showABTesting && (
             <div className="space-y-4">
-              <div>
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={formData.ab_testing.enabled}
-                    onChange={(e) => handleInputChange('ab_testing.enabled', e.target.checked)}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="text-sm text-gray-700">Enable A/B Testing</span>
-                </label>
-              </div>
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={formData.ab_testing.enabled}
+                  onChange={(e) => handleInputChange('ab_testing.enabled', e.target.checked)}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700">Enable A/B Testing</span>
+              </label>
 
               {formData.ab_testing.enabled && (
                 <>
@@ -527,10 +493,10 @@ export default function ContentRequest() {
                       onChange={(e) => handleInputChange('ab_testing.variations', parseInt(e.target.value))}
                       className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
-                      <option value={1}>1 (Original only)</option>
-                      <option value={2}>2 (A/B Test)</option>
-                      <option value={3}>3 (A/B/C Test)</option>
-                      <option value={4}>4 (A/B/C/D Test)</option>
+                      <option value={1}>1 Version</option>
+                      <option value={2}>2 Versions</option>
+                      <option value={3}>3 Versions</option>
+                      <option value={4}>4 Versions</option>
                     </select>
                   </div>
 
@@ -538,16 +504,23 @@ export default function ContentRequest() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Success Metrics
                     </label>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      {successMetrics.map(metric => (
-                        <label key={metric.value} className="flex items-center space-x-2 cursor-pointer">
+                    <div className="grid grid-cols-2 gap-3">
+                      {['Engagement Rate', 'Reach', 'Clicks', 'Conversions', 'Shares', 'Comments'].map(metric => (
+                        <label key={metric} className="flex items-center space-x-2">
                           <input
                             type="checkbox"
-                            checked={formData.ab_testing.success_metrics.includes(metric.value)}
-                            onChange={() => handleMetricChange(metric.value)}
+                            checked={formData.ab_testing.success_metrics.includes(metric.toLowerCase().replace(' ', '_'))}
+                            onChange={(e) => {
+                              const metricKey = metric.toLowerCase().replace(' ', '_')
+                              const currentMetrics = formData.ab_testing.success_metrics
+                              const newMetrics = e.target.checked 
+                                ? [...currentMetrics, metricKey]
+                                : currentMetrics.filter(m => m !== metricKey)
+                              handleInputChange('ab_testing.success_metrics', newMetrics)
+                            }}
                             className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                           />
-                          <span className="text-sm text-gray-700">{metric.label}</span>
+                          <span className="text-sm text-gray-700">{metric}</span>
                         </label>
                       ))}
                     </div>
@@ -559,7 +532,7 @@ export default function ContentRequest() {
         </div>
 
         {/* Advanced Options */}
-        <div className="border border-gray-200 rounded-lg p-4">
+        <div className="border border-gray-200 rounded-md p-4">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-medium text-gray-900">Advanced Options</h3>
             <button
@@ -567,7 +540,7 @@ export default function ContentRequest() {
               onClick={() => setShowAdvanced(!showAdvanced)}
               className="text-blue-600 hover:text-blue-800 text-sm"
             >
-              {showAdvanced ? 'Hide' : 'Show'} Options
+              {showAdvanced ? 'Hide Options' : 'Show Options'}
             </button>
           </div>
 
@@ -582,12 +555,12 @@ export default function ContentRequest() {
                   onChange={(e) => handleInputChange('advanced_options.tone', e.target.value)}
                   className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="">Leave blank for AI to optimize</option>
-                  {tones.map(tone => (
-                    <option key={tone.value} value={tone.value}>
-                      {tone.label}
-                    </option>
-                  ))}
+                  <option value="playful">Playful</option>
+                  <option value="professional">Professional</option>
+                  <option value="casual">Casual</option>
+                  <option value="urgent">Urgent</option>
+                  <option value="inspirational">Inspirational</option>
+                  <option value="educational">Educational</option>
                 </select>
               </div>
 
@@ -599,7 +572,7 @@ export default function ContentRequest() {
                   type="text"
                   value={formData.advanced_options.audience_persona}
                   onChange={(e) => handleInputChange('advanced_options.audience_persona', e.target.value)}
-                  placeholder="e.g., Teachers, Parents, Business Owners"
+                  placeholder="teachers, administrators, ed tech leaders, educators"
                   className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
@@ -612,7 +585,7 @@ export default function ContentRequest() {
                   type="text"
                   value={formData.advanced_options.custom_cta}
                   onChange={(e) => handleInputChange('advanced_options.custom_cta', e.target.value)}
-                  placeholder="Leave blank for AI to optimize"
+                  placeholder="Follow my learning journey"
                   className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
@@ -626,7 +599,7 @@ export default function ContentRequest() {
                   onChange={(e) => handleInputChange('advanced_options.scheduling', e.target.value)}
                   className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="optimal_time">Optimal Time (AI decides)</option>
+                  <option value="optimal">Optimal Time (AI decides)</option>
                   <option value="immediate">Post Immediately</option>
                   <option value="custom">Custom Schedule</option>
                 </select>
@@ -635,26 +608,40 @@ export default function ContentRequest() {
           )}
         </div>
 
-        {/* Status Message */}
-        {submitStatus && (
-          <div className={`p-4 rounded-md ${
-            submitStatus.type === 'success' 
-              ? 'bg-green-50 text-green-800 border border-green-200' 
-              : 'bg-red-50 text-red-800 border border-red-200'
-          }`}>
-            {submitStatus.message}
-          </div>
-        )}
-
-        {/* Submit Button */}
-        <div className="flex justify-end">
+        {/* Submit Buttons */}
+        <div className="flex space-x-4">
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-6 py-3 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? 'Creating Content...' : 'Create Content Request'}
           </button>
+          
+          <button
+            type="button"
+            onClick={resetForm}
+            className="px-6 py-3 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          >
+            Reset Form
+          </button>
+        </div>
+
+        {/* AI Assistance Note */}
+        <div className="bg-green-50 border border-green-200 rounded-md p-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-green-800">AI Will Optimize</h3>
+              <div className="mt-2 text-sm text-green-700">
+                <p>Leave any field blank and AI will fill in optimized content based on your topic, keywords, and business objective.</p>
+              </div>
+            </div>
+          </div>
         </div>
       </form>
     </div>
