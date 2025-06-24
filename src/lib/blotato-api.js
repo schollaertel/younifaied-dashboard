@@ -1,12 +1,12 @@
 // Blotato API Integration Module
 // Handles all interactions with Blotato's API for content generation and publishing
 
-class BlotAtoAPI {
+class BlotatoAPI {
   constructor(apiKey) {
     this.apiKey = apiKey;
     this.baseURL = 'https://backend.blotato.com/v2';
     this.headers = {
-       'Authorization': `Bearer ${apiKey}`,
+      'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json'
     };
   }
@@ -384,7 +384,7 @@ Generate engaging, platform-optimized content that drives ${business_objective}.
       platform: platformReq.platform,
       status: isDraft ? 'draft' : 'scheduled',
       content: variation.content,
-      blotato Url: result.url,
+      blotatoUrl: result.url,
       variation: variation.id
     };
   }
@@ -484,4 +484,4 @@ Generate engaging, platform-optimized content that drives ${business_objective}.
   }
 }
 
-export default BlotAtoAPI;
+export default BlotatoAPI;
