@@ -9,6 +9,7 @@ export function ContentRequest() {
     platforms: [],
     topic: '',
     content_description: '',
+    cta: '',
     primary_keywords: '',
     secondary_keywords: '',
     long_tail_keywords: '',
@@ -23,7 +24,7 @@ export function ContentRequest() {
     },
     ab_testing: {
       enabled: false,
-      variable: '',
+      variables: [],
       variations: 2,
     },
     advanced_options: {
@@ -40,6 +41,26 @@ export function ContentRequest() {
   });
 
   const [audiencePersonas, setAudiencePersonas] = useState([]);
+
+  // A/B Testing variable options
+  const abTestVariables = [
+    'Headline',
+    'Call to Action',
+    'Opening Hook',
+    'Tone of Voice',
+    'Content Length',
+    'Visual Style',
+    'Posting Time',
+    'Hashtags'
+  ];
+
+  // Variation options with descriptions
+  const variationOptions = [
+    { value: 2, label: '2 Variations', description: 'A vs B test' },
+    { value: 3, label: '3 Variations', description: 'A vs B vs C test' },
+    { value: 4, label: '4 Variations', description: 'Multi-variant test' },
+    { value: 5, label: '5 Variations', description: 'Advanced multi-variant test' }
+  ];
 
   useEffect(() => {
     const personas = [
@@ -81,6 +102,23 @@ export function ContentRequest() {
     }));
   };
 
+  const handleABVariableChange = (variable) => {
+    setFormData(prev => {
+      const currentVariables = prev.ab_testing.variables || [];
+      const newVariables = currentVariables.includes(variable)
+        ? currentVariables.filter(v => v !== variable)
+        : [...currentVariables, variable];
+      
+      return {
+        ...prev,
+        ab_testing: {
+          ...prev.ab_testing,
+          variables: newVariables,
+        },
+      };
+    });
+  };
+
   const handleAdvancedOptionsChange = (field, value) => {
     setFormData(prev => ({
       ...prev,
@@ -97,6 +135,7 @@ export function ContentRequest() {
       platforms: [],
       topic: '',
       content_description: '',
+      cta: '',
       primary_keywords: '',
       secondary_keywords: '',
       long_tail_keywords: '',
@@ -106,7 +145,7 @@ export function ContentRequest() {
       audience_persona_name: audiencePersonas.length > 0 ? audiencePersonas[0] : '',
       brand_profile_name: 'YouNifAiEd',
       user_content: { files: [], text: '' },
-      ab_testing: { enabled: false, variable: '', variations: 2 },
+      ab_testing: { enabled: false, variables: [], variations: 2 },
       advanced_options: { tone_of_voice: '', style_guide: '', specific_instructions: '' },
     });
   };
@@ -128,7 +167,7 @@ export function ContentRequest() {
       const requestData = {
         ...formData,
         user_id: user.id,
-        email: user.email,
+        user_email: user.email, // Fix: use user_email instead of email
         status: 'pending',
       };
 
@@ -230,6 +269,17 @@ export function ContentRequest() {
               ></textarea>
             </div>
             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Call to Action (CTA)*</label>
+              <input
+                type="text"
+                value={formData.cta}
+                onChange={(e) => handleInputChange('cta', e.target.value)}
+                placeholder="What action should readers take? (e.g., 'Sign up for our newsletter', 'Book a consultation')"
+                className="w-full p-3 border border-gray-300 rounded-md"
+                required
+              />
+            </div>
+            <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Audience Persona*</label>
                 <select
                     value={formData.audience_persona_name}
@@ -300,26 +350,36 @@ export function ContentRequest() {
               <span>Enable A/B Testing</span>
             </label>
             {formData.ab_testing.enabled && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">A/B Test Variable</label>
-                  <input
-                    type="text"
-                    value={formData.ab_testing.variable}
-                    onChange={(e) => handleABTestingChange('variable', e.target.value)}
-                    placeholder="e.g., Headline, Call to Action"
-                    className="w-full p-3 border border-gray-300 rounded-md"
-                  />
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Test Variables (select all that apply)</label>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {abTestVariables.map(variable => (
+                      <label key={variable} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={formData.ab_testing.variables?.includes(variable) || false}
+                          onChange={() => handleABVariableChange(variable)}
+                          className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                        />
+                        <span className="text-sm">{variable}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Number of Variations</label>
-                  <input
-                    type="number"
+                  <select
                     value={formData.ab_testing.variations}
                     onChange={(e) => handleABTestingChange('variations', parseInt(e.target.value))}
-                    min="2"
                     className="w-full p-3 border border-gray-300 rounded-md"
-                  />
+                  >
+                    {variationOptions.map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.label} - {option.description}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
             )}
