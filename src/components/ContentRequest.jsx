@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext'; // Re-enabled useAuth
-import { createContentRequest } from '../lib/supabase'; // Ensure this path is correct
+import { useAuth } from '../contexts/AuthContext';
+import { createContentRequest } from '../lib/supabase';
 
 export function ContentRequest() {
-  const { user } = useAuth(); // Re-enabled useAuth
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     content_type: '',
     platforms: [],
@@ -16,7 +16,7 @@ export function ContentRequest() {
     priority: 'normal',
     inspiration_link: '',
     audience_persona_name: '',
-    brand_profile_name: 'YouNifAiEd', // Default value
+    brand_profile_name: 'YouNifAiEd',
     user_content: {
       files: [],
       text: '',
@@ -41,8 +41,6 @@ export function ContentRequest() {
 
   const [audiencePersonas, setAudiencePersonas] = useState([]);
 
-  // In a real app, you'd fetch this from your database.
-  // For now, we'll hardcode them based on your CSV.
   useEffect(() => {
     const personas = [
       "Tech Innovator",
@@ -53,15 +51,12 @@ export function ContentRequest() {
     ];
     setAudiencePersonas(personas);
     if (personas.length > 0) {
-      // Set a default value to avoid blank initial state
       setFormData(prev => ({ ...prev, audience_persona_name: personas[0] }));
     }
   }, []);
 
-
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    // Reset status when user starts typing again
     if (submissionStatus.error || submissionStatus.success) {
       setSubmissionStatus({ loading: false, error: null, success: false });
     }
@@ -132,8 +127,8 @@ export function ContentRequest() {
 
       const requestData = {
         ...formData,
-        user_id: user.id, // Use real user ID
-        email: user.email, // Use real user email
+        user_id: user.id,
+        email: user.email,
         status: 'pending',
       };
 
@@ -144,7 +139,6 @@ export function ContentRequest() {
       console.log("handleSubmit: Response from Supabase:", result);
 
       if (result.error) {
-        // Log the full error object for detailed debugging
         console.error("handleSubmit: Supabase error details:", result.error);
         throw new Error(result.error.message || 'An unknown error occurred during content request creation.');
       }
@@ -166,7 +160,6 @@ export function ContentRequest() {
       setSubmissionStatus({ loading: false, error: error.message, success: false });
     }
   };
-
 
   return (
     <div className="container mx-auto p-8 bg-white rounded-lg shadow-md">
@@ -368,7 +361,6 @@ export function ContentRequest() {
           </div>
         </div>
 
-
         {/* Submit Button */}
         <div className="flex items-center justify-end space-x-4">
             <button
@@ -381,10 +373,11 @@ export function ContentRequest() {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-               )}
+              )}
               {submissionStatus.loading ? 'Creating Content...' : 'Create Content Request'}
             </button>
         </div>
+      </form>
 
       {submissionStatus.success && (
         <div className="mt-4 p-4 bg-green-100 text-green-800 border border-green-300 rounded-md">
@@ -399,3 +392,4 @@ export function ContentRequest() {
     </div>
   );
 }
+
