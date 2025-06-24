@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = 'https://kugyztiwixrsbtjpewrd.supabase.co'
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt1Z3l6dGl3aXhyc2J0anBld3JkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAyNTAxMDMsImV4cCI6MjA2NTgyNjEwM30.SgKuehmL7L_4ApdHU9aE786lDGYAZFYr-wk01MqK-Wc'
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey )
+export const supabase = createClient(supabaseUrl, supabaseAnonKey  )
 
 export const createContentRequest = async (requestData) => {
   try {
@@ -13,11 +13,15 @@ export const createContentRequest = async (requestData) => {
       .select()
       .single()
 
-    if (error) throw error
+    if (error) {
+      // Return the full error object for detailed debugging
+      return { success: false, error: error }; 
+    }
     return { success: true, data }
   } catch (error) {
-    console.error('Error creating content request:', error)
-    return { success: false, error: error.message }
+    console.error('Error creating content request in supabase.js:', error)
+    // Return the full error object for detailed debugging
+    return { success: false, error: error }
   }
 }
 
