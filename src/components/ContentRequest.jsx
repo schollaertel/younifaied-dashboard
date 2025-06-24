@@ -203,7 +203,7 @@ export function ContentRequest() {
       }
 
       // Step 5: Get Blotato account IDs
-      const accountIdsResult = await getBlotato AccountIds()
+      const accountIdsResult = await getBlotatoAccountIds()
       if (accountIdsResult.success) {
         routingResult.payload.account_ids = accountIdsResult.data
       }
