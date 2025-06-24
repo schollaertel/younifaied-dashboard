@@ -21,6 +21,10 @@ export function ContentRequest() {
     user_content: {
       files: [],
       text: '',
+      additional_context: '',
+      custom_caption: '',
+      brand_voice: '',
+      brand_guidelines: '',
     },
     ab_testing: {
       enabled: false,
@@ -31,6 +35,10 @@ export function ContentRequest() {
       tone_of_voice: '',
       style_guide: '',
       specific_instructions: '',
+      target_word_count: '',
+      include_hashtags: true,
+      include_emojis: false,
+      posting_schedule: '',
     },
   });
 
@@ -41,6 +49,7 @@ export function ContentRequest() {
   });
 
   const [audiencePersonas, setAudiencePersonas] = useState([]);
+  const [uploadedFiles, setUploadedFiles] = useState([]);
 
   // A/B Testing variable options
   const abTestVariables = [
@@ -90,6 +99,36 @@ export function ContentRequest() {
         : [...prev.platforms, platform];
       return { ...prev, platforms: newPlatforms };
     });
+  };
+
+  const handleUserContentChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      user_content: {
+        ...prev.user_content,
+        [field]: value,
+      },
+    }));
+  };
+
+  const handleFileUpload = (event) => {
+    const files = Array.from(event.target.files);
+    const fileData = files.map(file => ({
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      lastModified: file.lastModified,
+    }));
+    
+    setUploadedFiles(files);
+    handleUserContentChange('files', fileData);
+  };
+
+  const removeFile = (index) => {
+    const newFiles = uploadedFiles.filter((_, i) => i !== index);
+    const newFileData = formData.user_content.files.filter((_, i) => i !== index);
+    setUploadedFiles(newFiles);
+    handleUserContentChange('files', newFileData);
   };
 
   const handleABTestingChange = (field, value) => {
@@ -144,10 +183,11 @@ export function ContentRequest() {
       inspiration_link: '',
       audience_persona_name: audiencePersonas.length > 0 ? audiencePersonas[0] : '',
       brand_profile_name: 'YouNifAiEd',
-      user_content: { files: [], text: '' },
+      user_content: { files: [], text: '', additional_context: '', custom_caption: '', brand_voice: '', brand_guidelines: '' },
       ab_testing: { enabled: false, variables: [], variations: 2 },
-      advanced_options: { tone_of_voice: '', style_guide: '', specific_instructions: '' },
+      advanced_options: { tone_of_voice: '', style_guide: '', specific_instructions: '', target_word_count: '', include_hashtags: true, include_emojis: false, posting_schedule: '' },
     });
+    setUploadedFiles([]);
   };
 
   const handleSubmit = async (e) => {
@@ -167,7 +207,7 @@ export function ContentRequest() {
       const requestData = {
         ...formData,
         user_id: user.id,
-        user_email: user.email, // Fix: use user_email instead of email
+        user_email: user.email,
         status: 'pending',
       };
 
@@ -296,7 +336,84 @@ export function ContentRequest() {
           </div>
         </div>
 
-        {/* Section 3: Keyword Focus */}
+        {/* Section 3: File Upload & Additional Context */}
+        <div className="p-6 border border-gray-200 rounded-lg">
+          <h2 className="text-xl font-semibold mb-4 text-gray-700">Media & Additional Context</h2>
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Upload Images/Videos</label>
+              <input
+                type="file"
+                multiple
+                accept="image/*,video/*"
+                onChange={handleFileUpload}
+                className="w-full p-3 border border-gray-300 rounded-md"
+              />
+              {uploadedFiles.length > 0 && (
+                <div className="mt-4 space-y-2">
+                  <p className="text-sm font-medium text-gray-700">Uploaded Files:</p>
+                  {uploadedFiles.map((file, index) => (
+                    <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                      <span className="text-sm">{file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                      <button
+                        type="button"
+                        onClick={() => removeFile(index)}
+                        className="text-red-600 hover:text-red-800 text-sm"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Additional Context</label>
+              <textarea
+                value={formData.user_content.additional_context}
+                onChange={(e) => handleUserContentChange('additional_context', e.target.value)}
+                placeholder="Any additional context, background information, or specific details about your brand/business"
+                className="w-full p-3 border border-gray-300 rounded-md h-24"
+              ></textarea>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Custom Caption/Text</label>
+              <textarea
+                value={formData.user_content.custom_caption}
+                onChange={(e) => handleUserContentChange('custom_caption', e.target.value)}
+                placeholder="Any specific text, captions, or copy you want included"
+                className="w-full p-3 border border-gray-300 rounded-md h-24"
+              ></textarea>
+            </div>
+          </div>
+        </div>
+
+        {/* Section 4: Brand Voice & Guidelines */}
+        <div className="p-6 border border-gray-200 rounded-lg">
+          <h2 className="text-xl font-semibold mb-4 text-gray-700">Brand Voice & Guidelines</h2>
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Brand Voice Description</label>
+              <textarea
+                value={formData.user_content.brand_voice}
+                onChange={(e) => handleUserContentChange('brand_voice', e.target.value)}
+                placeholder="Describe your brand's voice and personality (e.g., 'Professional but approachable, educational, inspiring')"
+                className="w-full p-3 border border-gray-300 rounded-md h-24"
+              ></textarea>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Brand Guidelines</label>
+              <textarea
+                value={formData.user_content.brand_guidelines}
+                onChange={(e) => handleUserContentChange('brand_guidelines', e.target.value)}
+                placeholder="Any specific brand guidelines, do's and don'ts, or style requirements"
+                className="w-full p-3 border border-gray-300 rounded-md h-24"
+              ></textarea>
+            </div>
+          </div>
+        </div>
+
+        {/* Section 5: Keyword Focus */}
         <div className="p-6 border border-gray-200 rounded-lg">
           <h2 className="text-xl font-semibold mb-4 text-gray-700">Keyword Focus (for SEO)</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -336,7 +453,7 @@ export function ContentRequest() {
             />
         </div>
 
-        {/* Section 4: A/B Testing */}
+        {/* Section 6: A/B Testing */}
         <div className="p-6 border border-gray-200 rounded-lg">
           <h2 className="text-xl font-semibold mb-4 text-gray-700">A/B Testing Options</h2>
           <div className="space-y-4">
@@ -386,19 +503,31 @@ export function ContentRequest() {
           </div>
         </div>
 
-        {/* Section 5: Advanced Options */}
+        {/* Section 7: Advanced Options */}
         <div className="p-6 border border-gray-200 rounded-lg">
           <h2 className="text-xl font-semibold mb-4 text-gray-700">Advanced Options</h2>
           <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Tone of Voice</label>
-              <input
-                type="text"
-                value={formData.advanced_options.tone_of_voice}
-                onChange={(e) => handleAdvancedOptionsChange('tone_of_voice', e.target.value)}
-                placeholder="e.g., Professional, Humorous, Empathetic"
-                className="w-full p-3 border border-gray-300 rounded-md"
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Tone of Voice</label>
+                <input
+                  type="text"
+                  value={formData.advanced_options.tone_of_voice}
+                  onChange={(e) => handleAdvancedOptionsChange('tone_of_voice', e.target.value)}
+                  placeholder="e.g., Professional, Humorous, Empathetic"
+                  className="w-full p-3 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Target Word Count</label>
+                <input
+                  type="text"
+                  value={formData.advanced_options.target_word_count}
+                  onChange={(e) => handleAdvancedOptionsChange('target_word_count', e.target.value)}
+                  placeholder="e.g., 150-200 words, 500 words"
+                  className="w-full p-3 border border-gray-300 rounded-md"
+                />
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Style Guide / Brand Guidelines</label>
@@ -417,6 +546,36 @@ export function ContentRequest() {
                 placeholder="Any other specific requirements or details for the AI"
                 className="w-full p-3 border border-gray-300 rounded-md h-24"
               ></textarea>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={formData.advanced_options.include_hashtags}
+                  onChange={(e) => handleAdvancedOptionsChange('include_hashtags', e.target.checked)}
+                  className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                />
+                <span>Include Hashtags</span>
+              </label>
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={formData.advanced_options.include_emojis}
+                  onChange={(e) => handleAdvancedOptionsChange('include_emojis', e.target.checked)}
+                  className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                />
+                <span>Include Emojis</span>
+              </label>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Posting Schedule</label>
+                <input
+                  type="text"
+                  value={formData.advanced_options.posting_schedule}
+                  onChange={(e) => handleAdvancedOptionsChange('posting_schedule', e.target.value)}
+                  placeholder="e.g., Daily at 9 AM"
+                  className="w-full p-3 border border-gray-300 rounded-md"
+                />
+              </div>
             </div>
           </div>
         </div>
