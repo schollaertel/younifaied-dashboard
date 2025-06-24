@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { createContentRequest, createWorkflowExecution, getBlotatoAccountIds } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase'
 import WorkflowRouter from '@/lib/workflow-router'
 import BlotatoAPI from '@/lib/blotato-api'
 
@@ -12,6 +13,7 @@ export default function ContentRequest() {
     content_description: '',
     business_objective: '',
     priority: 'normal',
+    inspiration_link: '',
     user_content: {
       images: [],
       videos: [],
@@ -154,12 +156,19 @@ export default function ContentRequest() {
     setSubmitStatus(null)
 
     try {
+      // Get current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      
+      if (userError || !user) {
+        throw new Error('You must be logged in to create content requests')
+      }
+
       // Validate required fields
       if (!formData.content_type || !formData.content_description || formData.platforms.length === 0) {
         throw new Error('Please fill in all required fields')
       }
 
-      // Create content request in database
+      // Create content request in database with real user data
       const requestResult = await createContentRequest({
         content_type: formData.content_type,
         platforms: formData.platforms,
@@ -169,7 +178,10 @@ export default function ContentRequest() {
         user_content: formData.user_content,
         ab_testing: formData.ab_testing,
         advanced_options: formData.advanced_options,
-        status: 'pending'
+        inspiration_link: formData.inspiration_link,
+        status: 'pending',
+        user_id: user.id,
+        user_email: user.email
       })
 
       if (!requestResult.success) {
@@ -225,6 +237,7 @@ export default function ContentRequest() {
         content_description: '',
         business_objective: '',
         priority: 'normal',
+        inspiration_link: '',
         user_content: {
           images: [],
           videos: [],
@@ -315,6 +328,23 @@ export default function ContentRequest() {
           />
           <p className="text-xs text-gray-500 mt-1">
             💡 AI will optimize and expand your description for each platform
+          </p>
+        </div>
+
+        {/* Inspiration Link */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Inspiration Link (Optional)
+          </label>
+          <input
+            type="url"
+            value={formData.inspiration_link}
+            onChange={(e) => handleInputChange('inspiration_link', e.target.value)}
+            placeholder="Link to content you want to rip off and make better"
+            className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            🎯 Share a link to content that inspired you - we'll analyze it and make it better
           </p>
         </div>
 
@@ -456,29 +486,24 @@ export default function ContentRequest() {
               placeholder="Leave blank for AI to optimize hashtags"
               className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
-            <p className="text-xs text-gray-500 mt-1">
-              💡 AI will research trending hashtags for your content and platforms
-            </p>
           </div>
         </div>
 
         {/* A/B Testing Section */}
         <div className="border border-gray-200 rounded-lg p-4">
-          <button
-            type="button"
-            onClick={() => setShowABTesting(!showABTesting)}
-            className="flex items-center justify-between w-full text-left"
-          >
-            <h3 className="text-lg font-medium text-gray-900">
-              A/B Testing Options
-            </h3>
-            <span className="text-gray-500">
-              {showABTesting ? '−' : '+'}
-            </span>
-          </button>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-medium text-gray-900">A/B Testing</h3>
+            <button
+              type="button"
+              onClick={() => setShowABTesting(!showABTesting)}
+              className="text-blue-600 hover:text-blue-800 text-sm"
+            >
+              {showABTesting ? 'Hide' : 'Show'} Options
+            </button>
+          </div>
 
           {showABTesting && (
-            <div className="mt-4 space-y-4">
+            <div className="space-y-4">
               <div>
                 <label className="flex items-center space-x-2">
                   <input
@@ -495,23 +520,23 @@ export default function ContentRequest() {
                 <>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Number of Variations (1-4)
+                      Number of Variations
                     </label>
                     <select
                       value={formData.ab_testing.variations}
                       onChange={(e) => handleInputChange('ab_testing.variations', parseInt(e.target.value))}
                       className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
-                      <option value={1}>1 (No A/B Testing)</option>
-                      <option value={2}>2 Variations</option>
-                      <option value={3}>3 Variations</option>
-                      <option value={4}>4 Variations</option>
+                      <option value={1}>1 (Original only)</option>
+                      <option value={2}>2 (A/B Test)</option>
+                      <option value={3}>3 (A/B/C Test)</option>
+                      <option value={4}>4 (A/B/C/D Test)</option>
                     </select>
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Success Metrics to Track
+                      Success Metrics
                     </label>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                       {successMetrics.map(metric => (
@@ -535,52 +560,48 @@ export default function ContentRequest() {
 
         {/* Advanced Options */}
         <div className="border border-gray-200 rounded-lg p-4">
-          <button
-            type="button"
-            onClick={() => setShowAdvanced(!showAdvanced)}
-            className="flex items-center justify-between w-full text-left"
-          >
-            <h3 className="text-lg font-medium text-gray-900">
-              Advanced Options
-            </h3>
-            <span className="text-gray-500">
-              {showAdvanced ? '−' : '+'}
-            </span>
-          </button>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-medium text-gray-900">Advanced Options</h3>
+            <button
+              type="button"
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              className="text-blue-600 hover:text-blue-800 text-sm"
+            >
+              {showAdvanced ? 'Hide' : 'Show'} Options
+            </button>
+          </div>
 
           {showAdvanced && (
-            <div className="mt-4 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Tone
-                  </label>
-                  <select
-                    value={formData.advanced_options.tone}
-                    onChange={(e) => handleInputChange('advanced_options.tone', e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="">Leave blank for AI to optimize</option>
-                    {tones.map(tone => (
-                      <option key={tone.value} value={tone.value}>
-                        {tone.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Tone
+                </label>
+                <select
+                  value={formData.advanced_options.tone}
+                  onChange={(e) => handleInputChange('advanced_options.tone', e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Leave blank for AI to optimize</option>
+                  {tones.map(tone => (
+                    <option key={tone.value} value={tone.value}>
+                      {tone.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Audience Persona
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.advanced_options.audience_persona}
-                    onChange={(e) => handleInputChange('advanced_options.audience_persona', e.target.value)}
-                    placeholder="Leave blank for AI to optimize"
-                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Audience Persona
+                </label>
+                <input
+                  type="text"
+                  value={formData.advanced_options.audience_persona}
+                  onChange={(e) => handleInputChange('advanced_options.audience_persona', e.target.value)}
+                  placeholder="e.g., Teachers, Parents, Business Owners"
+                  className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
               </div>
 
               <div>
@@ -605,7 +626,7 @@ export default function ContentRequest() {
                   onChange={(e) => handleInputChange('advanced_options.scheduling', e.target.value)}
                   className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="optimal_time">Optimal Time (AI Recommended)</option>
+                  <option value="optimal_time">Optimal Time (AI decides)</option>
                   <option value="immediate">Post Immediately</option>
                   <option value="custom">Custom Schedule</option>
                 </select>
@@ -614,7 +635,7 @@ export default function ContentRequest() {
           )}
         </div>
 
-        {/* Submit Status */}
+        {/* Status Message */}
         {submitStatus && (
           <div className={`p-4 rounded-md ${
             submitStatus.type === 'success' 
@@ -630,11 +651,7 @@ export default function ContentRequest() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className={`px-6 py-3 rounded-md font-medium transition-colors ${
-              isSubmitting
-                ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
-                : 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'
-            }`}
+            className="px-6 py-3 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? 'Creating Content...' : 'Create Content Request'}
           </button>
