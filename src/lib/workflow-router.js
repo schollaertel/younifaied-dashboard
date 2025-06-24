@@ -126,7 +126,7 @@ class WorkflowRouter {
       blotato: {
         requiresVideoGeneration: this.requiresVideoGeneration(content_type, platforms),
         requiresImageGeneration: this.requiresImageGeneration(content_type, platforms, user_content),
-        targetPlatforms: this.mapToBlotato Platforms(platforms)
+        targetPlatforms: this.mapToBlotatoPlatforms(platforms)
       }
     };
   }
@@ -313,8 +313,8 @@ class WorkflowRouter {
     );
   }
 
-  mapToBlotato Platforms(platforms) {
-    const blotato Mapping = {
+  mapToBlotatoPlatforms(platforms) {
+    const blotatoMapping = {
       instagram: 'instagram',
       facebook: 'facebook',
       twitter: 'twitter',
@@ -324,7 +324,7 @@ class WorkflowRouter {
       pinterest: 'pinterest'
     };
     
-    return platforms.map(p => blotato Mapping[p]).filter(Boolean);
+    return platforms.map(p => blotatoMapping[p]).filter(Boolean);
   }
 
   determineContentStyle(requestData) {
@@ -376,3 +376,4 @@ class WorkflowRouter {
 
 // Export for use in other modules
 export default WorkflowRouter;
+
