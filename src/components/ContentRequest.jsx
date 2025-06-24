@@ -357,26 +357,4 @@ export function ContentRequest() {
               ></textarea>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Specific Instructions</label>
-              <textarea
-                value={formData.advanced_options.specific_instructions}
-                onChange={(e) => handleAdvancedOptionsChange('specific_instructions', e.target.value)}
-                placeholder="Any other specific requirements or details for the AI"
-                className="w-full p-3 border border-gray-300 rounded-md h-24"
-              ></textarea>
-            </div>
-          </div>
-        </div>
-
-
-        {/* Submit Button */}
-        <div className="flex items-center justify-end space-x-4">
-            <button
-              type="submit"
-              disabled={submissionStatus.loading}
-              className="px-8 py-3 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center"
-            >
-              {submissionStatus.loading && (
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5
+              <label className="block text-sm
