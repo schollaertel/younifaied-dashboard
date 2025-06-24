@@ -376,4 +376,3 @@ class WorkflowRouter {
 
 // Export for use in other modules
 module.exports = WorkflowRouter;
-
