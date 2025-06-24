@@ -3,7 +3,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Auth } from './components/Auth'; // Assuming Auth.jsx is in components
 import { ContentRequest } from './components/ContentRequest'; // Your content request form
 import './index.css'; // IMPORTANT: Ensure your main CSS file is imported here
-
+import './index.css';
 // Main App component that handles routing and layout
 const AppContent = () => {
   const { user, loading } = useAuth();
