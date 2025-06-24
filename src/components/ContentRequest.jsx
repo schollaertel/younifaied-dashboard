@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { Send, Sparkles, Upload, Image, Video, X, FileImage, FileVideo, CheckCircle, ChevronDown, Settings, Target, TestTube } from 'lucide-react'
-import { createContentRequest, createWorkflowExecution, getBlotato AccountIds } from '@/lib/supabase'
+import { createContentRequest, createWorkflowExecution, getBlotatoAccountIds } from '@/lib/supabase'
 import WorkflowRouter from '@/lib/workflow-router'
 import BlotAtoAPI from '@/lib/blotato-api'
 
