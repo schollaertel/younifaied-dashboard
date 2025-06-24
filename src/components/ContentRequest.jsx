@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-// import { useAuth } from '../contexts/AuthContext'; // Temporarily removed
+import { useAuth } from '../contexts/AuthContext'; // Re-enabled useAuth
 import { createContentRequest } from '../lib/supabase'; // Ensure this path is correct
 
 export function ContentRequest() {
-  // const { user } = useAuth(); // Temporarily removed
+  const { user } = useAuth(); // Re-enabled useAuth
   const [formData, setFormData] = useState({
     content_type: '',
     platforms: [],
@@ -76,6 +76,26 @@ export function ContentRequest() {
     });
   };
 
+  const handleABTestingChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      ab_testing: {
+        ...prev.ab_testing,
+        [field]: value,
+      },
+    }));
+  };
+
+  const handleAdvancedOptionsChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      advanced_options: {
+        ...prev.advanced_options,
+        [field]: value,
+      },
+    }));
+  };
+
   const resetForm = () => {
     setFormData({
       content_type: '',
@@ -102,18 +122,18 @@ export function ContentRequest() {
     setSubmissionStatus({ loading: true, error: null, success: false });
 
     try {
-      // Temporarily use placeholder user data since useAuth is bypassed
-      const tempUserId = 'temp-user-id-placeholder'; 
-      const tempUserEmail = 'temp@example.com';
-
+      if (!user) {
+        throw new Error("User is not authenticated. Please log in.");
+      }
+      
       if (!formData.audience_persona_name || !formData.brand_profile_name) {
           throw new Error("Audience Persona and Brand Profile are required.");
       }
 
       const requestData = {
         ...formData,
-        user_id: tempUserId, // Use placeholder
-        email: tempUserEmail, // Use placeholder
+        user_id: user.id, // Use real user ID
+        email: user.email, // Use real user email
         status: 'pending',
       };
 
@@ -273,6 +293,81 @@ export function ContentRequest() {
             />
         </div>
 
+        {/* Section 4: A/B Testing */}
+        <div className="p-6 border border-gray-200 rounded-lg">
+          <h2 className="text-xl font-semibold mb-4 text-gray-700">A/B Testing Options</h2>
+          <div className="space-y-4">
+            <label className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={formData.ab_testing.enabled}
+                onChange={(e) => handleABTestingChange('enabled', e.target.checked)}
+                className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+              />
+              <span>Enable A/B Testing</span>
+            </label>
+            {formData.ab_testing.enabled && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">A/B Test Variable</label>
+                  <input
+                    type="text"
+                    value={formData.ab_testing.variable}
+                    onChange={(e) => handleABTestingChange('variable', e.target.value)}
+                    placeholder="e.g., Headline, Call to Action"
+                    className="w-full p-3 border border-gray-300 rounded-md"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Number of Variations</label>
+                  <input
+                    type="number"
+                    value={formData.ab_testing.variations}
+                    onChange={(e) => handleABTestingChange('variations', parseInt(e.target.value))}
+                    min="2"
+                    className="w-full p-3 border border-gray-300 rounded-md"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Section 5: Advanced Options */}
+        <div className="p-6 border border-gray-200 rounded-lg">
+          <h2 className="text-xl font-semibold mb-4 text-gray-700">Advanced Options</h2>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Tone of Voice</label>
+              <input
+                type="text"
+                value={formData.advanced_options.tone_of_voice}
+                onChange={(e) => handleAdvancedOptionsChange('tone_of_voice', e.target.value)}
+                placeholder="e.g., Professional, Humorous, Empathetic"
+                className="w-full p-3 border border-gray-300 rounded-md"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Style Guide / Brand Guidelines</label>
+              <textarea
+                value={formData.advanced_options.style_guide}
+                onChange={(e) => handleAdvancedOptionsChange('style_guide', e.target.value)}
+                placeholder="Link to your style guide or specific brand rules"
+                className="w-full p-3 border border-gray-300 rounded-md h-24"
+              ></textarea>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Specific Instructions</label>
+              <textarea
+                value={formData.advanced_options.specific_instructions}
+                onChange={(e) => handleAdvancedOptionsChange('specific_instructions', e.target.value)}
+                placeholder="Any other specific requirements or details for the AI"
+                className="w-full p-3 border border-gray-300 rounded-md h-24"
+              ></textarea>
+            </div>
+          </div>
+        </div>
+
 
         {/* Submit Button */}
         <div className="flex items-center justify-end space-x-4">
@@ -284,25 +379,4 @@ export function ContentRequest() {
               {submissionStatus.loading && (
                 <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-               )}
-              {submissionStatus.loading ? 'Creating Content...' : 'Create Content Request'}
-            </button>
-        </div>
-      </form>
-
-      {/* Status Messages */}
-      {submissionStatus.success && (
-        <div className="mt-4 p-4 bg-green-100 text-green-800 border border-green-300 rounded-md">
-          Success! Your content request has been submitted.
-        </div>
-      )}
-      {submissionStatus.error && (
-        <div className="mt-4 p-4 bg-red-100 text-red-800 border border-red-300 rounded-md">
-          <strong>Error:</strong> {submissionStatus.error}
-        </div>
-      )}
-    </div>
-  );
-}
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5
