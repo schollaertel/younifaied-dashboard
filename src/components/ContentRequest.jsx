@@ -234,68 +234,17 @@ export function ContentRequest() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
-      {/* YouNifAiEd Header with Website Logo */}
-      <div className="bg-white shadow-lg border-b-4 border-gradient-to-r from-lime-400 to-teal-500">
+      {/* YouNifAiEd Header with ACTUAL Website Logo */}
+      <div className="bg-white shadow-lg border-b-4" style={{borderImage: 'linear-gradient(to right, #A4D65E, #4ECDC4) 1'}}>
         <div className="container mx-auto px-8 py-6">
           <div className="flex items-center justify-between">
-            {/* Website Logo */}
+            {/* ACTUAL Website Logo */}
             <div className="flex items-center space-x-6">
-              <div className="relative">
-                {/* YouNifAiEd Infinity Logo */}
-                <div className="flex items-center space-x-4">
-                  <div className="relative w-20 h-12">
-                    {/* Infinity Symbol */}
-                    <svg viewBox="0 0 200 120" className="w-full h-full">
-                      {/* Left circle (hand side) */}
-                      <ellipse cx="50" cy="60" rx="45" ry="35" fill="none" stroke="#4ECDC4" strokeWidth="8" opacity="0.3"/>
-                      <ellipse cx="50" cy="60" rx="35" ry="25" fill="#E8F8F5" opacity="0.5"/>
-                      
-                      {/* Right circle (AI side) */}
-                      <ellipse cx="150" cy="60" rx="45" ry="35" fill="none" stroke="#A4D65E" strokeWidth="8" opacity="0.3"/>
-                      <ellipse cx="150" cy="60" rx="35" ry="25" fill="#F0F8E8" opacity="0.5"/>
-                      
-                      {/* Connecting infinity curve */}
-                      <path d="M 20 60 Q 100 20 180 60 Q 100 100 20 60" fill="none" stroke="url(#gradient)" strokeWidth="6"/>
-                      
-                      {/* Hand icon */}
-                      <g transform="translate(35, 45)">
-                        <path d="M15 5c1.1 0 2 .9 2 2v4c0 1.1-.9 2-2 2s-2-.9-2-2V7c0-1.1.9-2 2-2m9 7V10c0-1.1-.9-2-2-2s-2 .9-2 2v2c0 1.1.9 2 2 2s2-.9 2-2M6 12V10c0-1.1-.9-2-2-2s-2 .9-2 2v2c0 1.1.9 2 2 2s2-.9 2-2m9 3c-3.3 0-6 2.7-6 6v2c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2v-2c0-3.3-2.7-6-6-6z" fill="#4ECDC4"/>
-                      </g>
-                      
-                      {/* Circuit pattern */}
-                      <g transform="translate(135, 45)">
-                        <circle cx="5" cy="5" r="2" fill="#A4D65E"/>
-                        <circle cx="15" cy="5" r="2" fill="#A4D65E"/>
-                        <circle cx="25" cy="5" r="2" fill="#A4D65E"/>
-                        <line x1="7" y1="5" x2="13" y2="5" stroke="#A4D65E" strokeWidth="2"/>
-                        <line x1="17" y1="5" x2="23" y2="5" stroke="#A4D65E" strokeWidth="2"/>
-                        <line x1="15" y1="7" x2="15" y2="13" stroke="#A4D65E" strokeWidth="2"/>
-                        <circle cx="15" cy="15" r="2" fill="#A4D65E"/>
-                        <line x1="15" y1="17" x2="15" y2="23" stroke="#A4D65E" strokeWidth="2"/>
-                        <circle cx="15" cy="25" r="2" fill="#A4D65E"/>
-                      </g>
-                      
-                      <defs>
-                        <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                          <stop offset="0%" stopColor="#4ECDC4"/>
-                          <stop offset="50%" stopColor="#7ED321"/>
-                          <stop offset="100%" stopColor="#A4D65E"/>
-                        </linearGradient>
-                      </defs>
-                    </svg>
-                  </div>
-                  
-                  <div>
-                    <h1 className="text-3xl font-bold leading-tight">
-                      <span className="text-lime-500">You</span>
-                      <span className="text-teal-500">Nif</span>
-                      <span className="text-lime-400 font-outline-2 font-bold">AI</span>
-                      <span className="text-teal-700">Ed</span>
-                    </h1>
-                    <p className="text-teal-600 font-medium text-sm">Where Teachers and AI Are Unified for Authentic Growth</p>
-                  </div>
-                </div>
-              </div>
+              <img 
+                src="/upload/website_yunifaied-logo-website-v2-2025-4-16.png" 
+                alt="YouNifAiEd Logo" 
+                className="h-20 w-auto"
+              />
             </div>
             
             <div className="text-right">
@@ -306,7 +255,7 @@ export function ContentRequest() {
         </div>
       </div>
 
-      {/* Main Content - No Sidebar */}
+      {/* Main Content - NO SIDEBAR */}
       <div className="container mx-auto px-8 py-12">
         <div className="max-w-6xl mx-auto">
           <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-200">
@@ -415,12 +364,6 @@ export function ContentRequest() {
                     placeholder="Share any specific details, personal experiences, or angles you want included. Focus on how this helps teachers see quiet students who are actually making progress."
                     className="w-full p-5 border-2 border-gray-200 rounded-2xl focus:ring-3 focus:ring-lime-400 focus:border-lime-400 transition-all duration-300 h-40 text-gray-900 placeholder-gray-500 text-lg resize-none"
                   ></textarea>
-                  <p className="text-sm text-gray-500 mt-3 flex items-center">
-                    <svg className="w-4 h-4 mr-2 text-teal-500" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"/>
-                    </svg>
-                    Share any specific details, personal experiences, or angles you want included.
-                  </p>
                 </div>
 
                 <div>
@@ -437,12 +380,6 @@ export function ContentRequest() {
                     placeholder="https://example.com/inspiration-content"
                     className="w-full p-5 border-2 border-gray-200 rounded-2xl focus:ring-3 focus:ring-lime-400 focus:border-lime-400 transition-all duration-300 text-gray-900 placeholder-gray-500 text-lg"
                   />
-                  <p className="text-sm text-gray-500 mt-3 flex items-center">
-                    <svg className="w-4 h-4 mr-2 text-teal-500" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clipRule="evenodd"/>
-                    </svg>
-                    Link to content that inspired this request or that you want to reference.
-                  </p>
                 </div>
               </div>
 
@@ -536,45 +473,6 @@ export function ContentRequest() {
                         <span className="font-bold text-gray-700 group-hover:text-teal-700 transition-colors text-lg">{platform}</span>
                       </label>
                     ))}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div>
-                    <label className="flex items-center space-x-2 text-sm font-bold text-gray-700 mb-4">
-                      <svg className="w-5 h-5 text-teal-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd"/>
-                      </svg>
-                      <span>Posting Priority</span>
-                    </label>
-                    <select
-                      value={formData.posting_priority}
-                      onChange={(e) => handleInputChange('posting_priority', e.target.value)}
-                      className="w-full p-5 border-2 border-gray-200 rounded-2xl focus:ring-3 focus:ring-lime-400 focus:border-lime-400 transition-all duration-300 text-gray-900 bg-white text-lg"
-                    >
-                      <option value="low">Low Priority</option>
-                      <option value="normal">Normal Priority</option>
-                      <option value="high">High Priority</option>
-                      <option value="urgent">Urgent</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="flex items-center space-x-2 text-sm font-bold text-gray-700 mb-4">
-                      <svg className="w-5 h-5 text-teal-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd"/>
-                      </svg>
-                      <span>Preferred Posting Time</span>
-                    </label>
-                    <select
-                      value={formData.target_posting_time}
-                      onChange={(e) => handleInputChange('target_posting_time', e.target.value)}
-                      className="w-full p-5 border-2 border-gray-200 rounded-2xl focus:ring-3 focus:ring-lime-400 focus:border-lime-400 transition-all duration-300 text-gray-900 bg-white text-lg"
-                    >
-                      <option value="morning">Morning (6-11 AM)</option>
-                      <option value="afternoon">Afternoon (12-5 PM)</option>
-                      <option value="evening">Evening (6-9 PM)</option>
-                      <option value="optimal">AI-optimized timing</option>
-                    </select>
                   </div>
                 </div>
               </div>
@@ -681,46 +579,6 @@ export function ContentRequest() {
                     ))}
                   </div>
                 )}
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div>
-                    <label className="flex items-center space-x-2 text-sm font-bold text-gray-700 mb-4">
-                      <svg className="w-5 h-5 text-teal-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd"/>
-                      </svg>
-                      <span>Visual Content Request</span>
-                    </label>
-                    <select
-                      value={formData.visual_content_request}
-                      onChange={(e) => handleInputChange('visual_content_request', e.target.value)}
-                      className="w-full p-5 border-2 border-gray-200 rounded-2xl focus:ring-3 focus:ring-lime-400 focus:border-lime-400 transition-all duration-300 text-gray-900 bg-white text-lg"
-                    >
-                      <option value="image_only">Image Only</option>
-                      <option value="video_only">Video Only</option>
-                      <option value="image_and_video">Image and Video</option>
-                      <option value="no_visual">No Visual Content</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="flex items-center space-x-2 text-sm font-bold text-gray-700 mb-4">
-                      <svg className="w-5 h-5 text-teal-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd"/>
-                      </svg>
-                      <span>Image Style Preference</span>
-                    </label>
-                    <select
-                      value={formData.image_style_preference}
-                      onChange={(e) => handleInputChange('image_style_preference', e.target.value)}
-                      className="w-full p-5 border-2 border-gray-200 rounded-2xl focus:ring-3 focus:ring-lime-400 focus:border-lime-400 transition-all duration-300 text-gray-900 bg-white text-lg"
-                    >
-                      <option value="educational">Educational</option>
-                      <option value="professional">Professional</option>
-                      <option value="casual">Casual</option>
-                      <option value="inspiring">Inspiring</option>
-                      <option value="modern">Modern</option>
-                    </select>
-                  </div>
-                </div>
               </div>
 
               {/* Section 7: Advanced Options */}
@@ -904,23 +762,13 @@ export function ContentRequest() {
         </div>
       </div>
 
-      {/* Bottom Left AI Logo */}
+      {/* Bottom Left - ACTUAL AI Logo */}
       <div className="fixed bottom-8 left-8 z-50">
-        <div className="w-16 h-16 bg-gradient-to-br from-lime-400 to-teal-500 rounded-2xl shadow-2xl flex items-center justify-center transform hover:scale-110 transition-transform duration-300">
-          <svg viewBox="0 0 100 100" className="w-10 h-10">
-            {/* AI Diamond Shape */}
-            <path d="M50 10 L80 30 L80 70 L50 90 L20 70 L20 30 Z" fill="#FFFFFF" opacity="0.9"/>
-            {/* AI Text */}
-            <text x="50" y="60" textAnchor="middle" fill="#4ECDC4" fontSize="24" fontWeight="bold">AI</text>
-            {/* Circuit lines */}
-            <line x1="30" y1="40" x2="70" y2="40" stroke="#A4D65E" strokeWidth="2"/>
-            <line x1="30" y1="60" x2="70" y2="60" stroke="#A4D65E" strokeWidth="2"/>
-            <circle cx="25" cy="40" r="2" fill="#A4D65E"/>
-            <circle cx="75" cy="40" r="2" fill="#A4D65E"/>
-            <circle cx="25" cy="60" r="2" fill="#A4D65E"/>
-            <circle cx="75" cy="60" r="2" fill="#A4D65E"/>
-          </svg>
-        </div>
+        <img 
+          src="/upload/Social_ProfileLogo_v2_2025-4-15.png" 
+          alt="YouNifAiEd AI Logo" 
+          className="w-16 h-16 rounded-2xl shadow-2xl transform hover:scale-110 transition-transform duration-300"
+        />
       </div>
     </div>
   );
