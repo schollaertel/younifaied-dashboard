@@ -338,15 +338,13 @@ export function ContentRequest() {
           </div>
         </div>
 
-        {/* Bottom Small AI Logo */}
+        {/* Bottom Small AI Logo - USING YOUR ACTUAL LOGO FILE */}
         <div className="absolute bottom-8 left-8">
-          <div className="w-12 h-12 bg-lime-400 rounded-lg shadow-lg transform hover:scale-110 transition-transform duration-300 flex items-center justify-center">
-            <div className="w-8 h-8 bg-teal-600 rounded transform rotate-45 relative">
-              <div className="absolute inset-1 bg-lime-300 rounded text-xs flex items-center justify-center text-teal-800 font-bold transform -rotate-45">
-                AI
-              </div>
-            </div>
-          </div>
+          <img 
+            src="/upload/Social_ProfileLogo_v2_2025-4-15.png" 
+            alt="YouNifAiEd AI Logo" 
+            className="w-12 h-12 rounded-lg shadow-lg transform hover:scale-110 transition-transform duration-300"
+          />
         </div>
       </div>
 
@@ -356,39 +354,13 @@ export function ContentRequest() {
         <div className="shadow-lg border-b-4 border-lime-400" style={{backgroundColor: '#1d6379'}}>
           <div className="px-8 py-6">
             <div className="flex items-center justify-between">
-              {/* Website Logo */}
+              {/* Website Logo - USING YOUR ACTUAL LOGO FILE */}
               <div className="flex items-center space-x-6">
-                <div className="flex items-center space-x-4">
-                  {/* Infinity Symbol Logo */}
-                  <div className="relative w-16 h-10">
-                    <div className="absolute inset-0 flex items-center">
-                      {/* Left circle with hand */}
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-300 to-teal-500 flex items-center justify-center shadow-lg">
-                        <svg className="w-6 h-6 text-teal-800" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd"/>
-                        </svg>
-                      </div>
-                      {/* Infinity connector */}
-                      <div className="w-6 h-2 bg-gradient-to-r from-lime-400 to-teal-400 rounded-full mx-1"></div>
-                      {/* Right circle with circuit */}
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-lime-300 to-lime-500 flex items-center justify-center shadow-lg">
-                        <svg className="w-6 h-6 text-lime-800" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"/>
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-                  {/* YouNifAiEd Text */}
-                  <div className="text-white">
-                    <div className="text-2xl font-bold">
-                      <span style={{color: '#A4D65E'}}>You</span>
-                      <span style={{color: '#4ECDC4'}}>Nif</span>
-                      <span style={{color: '#A4D65E', textShadow: '1px 1px 0 #4ECDC4'}}>AI</span>
-                      <span style={{color: '#1d6379'}}>Ed.</span>
-                    </div>
-                    <p className="text-sm opacity-90">Where Teachers and AI Are Unified for Authentic Growth</p>
-                  </div>
-                </div>
+                <img 
+                  src="/upload/website_yunifaied-logo-website-v2-2025-4-16.png" 
+                  alt="YouNifAiEd Logo" 
+                  className="h-16 w-auto"
+                />
               </div>
               
               <div className="text-right">
