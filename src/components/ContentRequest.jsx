@@ -18,38 +18,6 @@ export function ContentRequest() {
     inspiration_link: '',
     audience_persona_name: '',
     brand_profile_name: 'YouNifAiEd',
-    user_content: {
-      files: [],
-      text: '',
-      additional_context: '',
-      custom_caption: '',
-      brand_voice: '',
-      brand_guidelines: '',
-    },
-    ab_testing: {
-      enabled: false,
-      variables: [],
-      variations: 2,
-    },
-    advanced_options: {
-      tone_of_voice: '',
-      style_guide: '',
-      specific_instructions: '',
-      target_word_count: '',
-      include_hashtags: true,
-      include_emojis: false,
-      posting_schedule: '',
-    },
-    automation: {
-      enabled: false,
-      auto_post: false,
-      review_required: true,
-    },
-    api_keys: {
-      openai_key: '',
-      blotato_key: '',
-      custom_api_key: '',
-    },
   });
 
   const [submissionStatus, setSubmissionStatus] = useState({
@@ -59,7 +27,6 @@ export function ContentRequest() {
   });
 
   const [audiencePersonas, setAudiencePersonas] = useState([]);
-  const [uploadedFiles, setUploadedFiles] = useState([]);
 
   useEffect(() => {
     const personas = [
@@ -76,16 +43,7 @@ export function ContentRequest() {
   }, []);
 
   const handleInputChange = (field, value) => {
-    if (field.includes('.')) {
-      const [parent, child] = field.split('.');
-      setFormData(prev => ({
-        ...prev,
-        [parent]: { ...prev[parent], [child]: value }
-      }));
-    } else {
-      setFormData(prev => ({ ...prev, [field]: value }));
-    }
-    
+    setFormData(prev => ({ ...prev, [field]: value }));
     if (submissionStatus.error || submissionStatus.success) {
       setSubmissionStatus({ loading: false, error: null, success: false });
     }
@@ -98,50 +56,6 @@ export function ContentRequest() {
         : [...prev.platforms, platform];
       return { ...prev, platforms: newPlatforms };
     });
-  };
-
-  const handleABTestingVariableChange = (variable) => {
-    setFormData(prev => {
-      const newVariables = prev.ab_testing.variables.includes(variable)
-        ? prev.ab_testing.variables.filter(v => v !== variable)
-        : [...prev.ab_testing.variables, variable];
-      return {
-        ...prev,
-        ab_testing: { ...prev.ab_testing, variables: newVariables }
-      };
-    });
-  };
-
-  const handleFileUpload = (event) => {
-    const files = Array.from(event.target.files);
-    const newFiles = files.map(file => ({
-      id: Date.now() + Math.random(),
-      file: file,
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : null
-    }));
-    
-    setUploadedFiles(prev => [...prev, ...newFiles]);
-    setFormData(prev => ({
-      ...prev,
-      user_content: {
-        ...prev.user_content,
-        files: [...prev.user_content.files, ...newFiles]
-      }
-    }));
-  };
-
-  const removeFile = (fileId) => {
-    setUploadedFiles(prev => prev.filter(f => f.id !== fileId));
-    setFormData(prev => ({
-      ...prev,
-      user_content: {
-        ...prev.user_content,
-        files: prev.user_content.files.filter(f => f.id !== fileId)
-      }
-    }));
   };
 
   const resetForm = () => {
@@ -159,40 +73,7 @@ export function ContentRequest() {
       inspiration_link: '',
       audience_persona_name: audiencePersonas.length > 0 ? audiencePersonas[0] : '',
       brand_profile_name: 'YouNifAiEd',
-      user_content: {
-        files: [],
-        text: '',
-        additional_context: '',
-        custom_caption: '',
-        brand_voice: '',
-        brand_guidelines: '',
-      },
-      ab_testing: {
-        enabled: false,
-        variables: [],
-        variations: 2,
-      },
-      advanced_options: {
-        tone_of_voice: '',
-        style_guide: '',
-        specific_instructions: '',
-        target_word_count: '',
-        include_hashtags: true,
-        include_emojis: false,
-        posting_schedule: '',
-      },
-      automation: {
-        enabled: false,
-        auto_post: false,
-        review_required: true,
-      },
-      api_keys: {
-        openai_key: '',
-        blotato_key: '',
-        custom_api_key: '',
-      },
     });
-    setUploadedFiles([]);
   };
 
   const handleSubmit = async (e) => {
@@ -246,7 +127,12 @@ export function ContentRequest() {
 
   return (
     <div className="container mx-auto p-8 bg-white rounded-lg shadow-md">
-      <h1 className="text-3xl font-bold mb-6 text-gray-800">Request Content Creation</h1>
+      <h1 className="text-3xl font-bold mb-6 text-gray-800">🚀 UPDATED FORM - TEST VERSION</h1>
+      
+      <div className="mb-6 p-4 bg-green-100 border border-green-300 rounded-md">
+        <p className="text-green-800 font-semibold">✅ This is a test to verify deployment is working!</p>
+        <p className="text-green-700">If you can see this message, the deployment pipeline is working correctly.</p>
+      </div>
       
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Section 1: Core Request */}
@@ -339,275 +225,7 @@ export function ContentRequest() {
           </div>
         </div>
 
-        {/* Section 3: Media & Files */}
-        <div className="p-6 border border-gray-200 rounded-lg">
-          <h2 className="text-xl font-semibold mb-4 text-gray-700">Media & File Upload</h2>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Upload Images/Videos</label>
-              <input
-                type="file"
-                multiple
-                accept="image/*,video/*"
-                onChange={handleFileUpload}
-                className="w-full p-3 border border-gray-300 rounded-md"
-              />
-              <p className="text-sm text-gray-500 mt-1">Upload reference images, videos, or assets for your content</p>
-            </div>
-            
-            {uploadedFiles.length > 0 && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {uploadedFiles.map(file => (
-                  <div key={file.id} className="relative border rounded-lg p-2">
-                    {file.preview ? (
-                      <img src={file.preview} alt={file.name} className="w-full h-20 object-cover rounded" />
-                    ) : (
-                      <div className="w-full h-20 bg-gray-100 rounded flex items-center justify-center">
-                        <span className="text-xs text-gray-500">{file.type}</span>
-                      </div>
-                    )}
-                    <p className="text-xs mt-1 truncate">{file.name}</p>
-                    <button
-                      type="button"
-                      onClick={() => removeFile(file.id)}
-                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Section 4: Personalization */}
-        <div className="p-6 border border-gray-200 rounded-lg">
-          <h2 className="text-xl font-semibold mb-4 text-gray-700">Personalization & Context</h2>
-          <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Additional Context</label>
-              <textarea
-                value={formData.user_content.additional_context}
-                onChange={(e) => handleInputChange('user_content.additional_context', e.target.value)}
-                placeholder="Any additional context, background information, or specific details..."
-                className="w-full p-3 border border-gray-300 rounded-md h-24"
-              ></textarea>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Custom Caption/Text</label>
-              <textarea
-                value={formData.user_content.custom_caption}
-                onChange={(e) => handleInputChange('user_content.custom_caption', e.target.value)}
-                placeholder="Any specific text, quotes, or captions you want included..."
-                className="w-full p-3 border border-gray-300 rounded-md h-24"
-              ></textarea>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Brand Voice Description</label>
-              <textarea
-                value={formData.user_content.brand_voice}
-                onChange={(e) => handleInputChange('user_content.brand_voice', e.target.value)}
-                placeholder="Describe your brand's voice and personality (e.g., 'Professional yet approachable, educational, inspiring')"
-                className="w-full p-3 border border-gray-300 rounded-md h-24"
-              ></textarea>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Brand Guidelines</label>
-              <textarea
-                value={formData.user_content.brand_guidelines}
-                onChange={(e) => handleInputChange('user_content.brand_guidelines', e.target.value)}
-                placeholder="Any specific brand guidelines, do's and don'ts, or style requirements..."
-                className="w-full p-3 border border-gray-300 rounded-md h-24"
-              ></textarea>
-            </div>
-          </div>
-        </div>
-
-        {/* Section 5: A/B Testing */}
-        <div className="p-6 border border-gray-200 rounded-lg">
-          <h2 className="text-xl font-semibold mb-4 text-gray-700">A/B Testing</h2>
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                checked={formData.ab_testing.enabled}
-                onChange={(e) => handleInputChange('ab_testing.enabled', e.target.checked)}
-                className="h-4 w-4 text-blue-600 border-gray-300 rounded"
-              />
-              <label className="text-sm font-medium text-gray-700">Enable A/B Testing</label>
-            </div>
-            
-            {formData.ab_testing.enabled && (
-              <>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Test Variables</label>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {['Headline', 'CTA', 'Opening Hook', 'Hashtags', 'Emojis', 'Image Style'].map(variable => (
-                      <label key={variable} className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          checked={formData.ab_testing.variables.includes(variable)}
-                          onChange={() => handleABTestingVariableChange(variable)}
-                          className="h-4 w-4 text-blue-600 border-gray-300 rounded"
-                        />
-                        <span className="text-sm">{variable}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Number of Variations</label>
-                  <select
-                    value={formData.ab_testing.variations}
-                    onChange={(e) => handleInputChange('ab_testing.variations', parseInt(e.target.value))}
-                    className="w-full p-3 border border-gray-300 rounded-md"
-                  >
-                    <option value={2}>2 Variations - A vs B test</option>
-                    <option value={3}>3 Variations - A vs B vs C test</option>
-                    <option value={4}>4 Variations - A vs B vs C vs D test</option>
-                  </select>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Section 6: Advanced Options */}
-        <div className="p-6 border border-gray-200 rounded-lg">
-          <h2 className="text-xl font-semibold mb-4 text-gray-700">Advanced Options</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Target Word Count</label>
-              <input
-                type="number"
-                value={formData.advanced_options.target_word_count}
-                onChange={(e) => handleInputChange('advanced_options.target_word_count', e.target.value)}
-                placeholder="e.g., 150"
-                className="w-full p-3 border border-gray-300 rounded-md"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Posting Schedule</label>
-              <input
-                type="text"
-                value={formData.advanced_options.posting_schedule}
-                onChange={(e) => handleInputChange('advanced_options.posting_schedule', e.target.value)}
-                placeholder="e.g., 'Monday 9 AM EST'"
-                className="w-full p-3 border border-gray-300 rounded-md"
-              />
-            </div>
-          </div>
-          <div className="mt-4 space-y-4">
-            <div className="flex items-center space-x-6">
-              <label className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={formData.advanced_options.include_hashtags}
-                  onChange={(e) => handleInputChange('advanced_options.include_hashtags', e.target.checked)}
-                  className="h-4 w-4 text-blue-600 border-gray-300 rounded"
-                />
-                <span className="text-sm">Include Hashtags</span>
-              </label>
-              <label className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={formData.advanced_options.include_emojis}
-                  onChange={(e) => handleInputChange('advanced_options.include_emojis', e.target.checked)}
-                  className="h-4 w-4 text-blue-600 border-gray-300 rounded"
-                />
-                <span className="text-sm">Include Emojis</span>
-              </label>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Specific Instructions</label>
-              <textarea
-                value={formData.advanced_options.specific_instructions}
-                onChange={(e) => handleInputChange('advanced_options.specific_instructions', e.target.value)}
-                placeholder="Any specific instructions or requirements..."
-                className="w-full p-3 border border-gray-300 rounded-md h-24"
-              ></textarea>
-            </div>
-          </div>
-        </div>
-
-        {/* Section 7: Automation */}
-        <div className="p-6 border border-gray-200 rounded-lg">
-          <h2 className="text-xl font-semibold mb-4 text-gray-700">Total Automation</h2>
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                checked={formData.automation.enabled}
-                onChange={(e) => handleInputChange('automation.enabled', e.target.checked)}
-                className="h-4 w-4 text-blue-600 border-gray-300 rounded"
-              />
-              <label className="text-sm font-medium text-gray-700">Enable Total Automation</label>
-            </div>
-            
-            {formData.automation.enabled && (
-              <div className="ml-6 space-y-4">
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={formData.automation.auto_post}
-                    onChange={(e) => handleInputChange('automation.auto_post', e.target.checked)}
-                    className="h-4 w-4 text-blue-600 border-gray-300 rounded"
-                  />
-                  <span className="text-sm">Auto-post to platforms</span>
-                </label>
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={formData.automation.review_required}
-                    onChange={(e) => handleInputChange('automation.review_required', e.target.checked)}
-                    className="h-4 w-4 text-blue-600 border-gray-300 rounded"
-                  />
-                  <span className="text-sm">Require review before posting</span>
-                </label>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Section 8: API Keys */}
-        <div className="p-6 border border-gray-200 rounded-lg">
-          <h2 className="text-xl font-semibold mb-4 text-gray-700">API Keys</h2>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">OpenAI API Key</label>
-              <input
-                type="password"
-                value={formData.api_keys.openai_key}
-                onChange={(e) => handleInputChange('api_keys.openai_key', e.target.value)}
-                placeholder="sk-..."
-                className="w-full p-3 border border-gray-300 rounded-md"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Blotato API Key</label>
-              <input
-                type="password"
-                value={formData.api_keys.blotato_key}
-                onChange={(e) => handleInputChange('api_keys.blotato_key', e.target.value)}
-                placeholder="Your Blotato API key"
-                className="w-full p-3 border border-gray-300 rounded-md"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Custom API Key</label>
-              <input
-                type="password"
-                value={formData.api_keys.custom_api_key}
-                onChange={(e) => handleInputChange('api_keys.custom_api_key', e.target.value)}
-                placeholder="Any other API key needed"
-                className="w-full p-3 border border-gray-300 rounded-md"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Section 9: Keyword Focus */}
+        {/* Keyword Focus */}
         <div className="p-6 border border-gray-200 rounded-lg">
           <h2 className="text-xl font-semibold mb-4 text-gray-700">Keyword Focus (for SEO)</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -663,7 +281,7 @@ export function ContentRequest() {
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
             )}
-            {submissionStatus.loading ? 'Creating Content...' : 'Create Content Request'}
+            {submissionStatus.loading ? 'Creating Content...' : 'TEST SUBMIT - Create Content Request'}
           </button>
         </div>
       </form>
