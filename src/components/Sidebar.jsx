@@ -66,11 +66,19 @@ export function Sidebar({ activeTab, setActiveTab }) {
               }`}
               onClick={() => setActiveTab(item.id)}
             >
+<<<<<<< HEAD
               <div className="flex items-start space-x-3">
                 <Icon className="h-5 w-5 mt-0.5 flex-shrink-0" />
                 <div className="text-left">
                   <div className="font-medium">{item.label}</div>
                   <div className={`text-xs ${
+=======
+              <div className="flex items-start space-x-3 w-full min-w-0">
+                <Icon className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                <div className="text-left flex-1 min-w-0">
+                  <div className="font-medium break-words leading-tight">{item.label}</div>
+                  <div className={`text-xs break-words leading-tight ${
+>>>>>>> 289c02e702defbe198c2460edef27ea764f648ed
                     activeTab === item.id 
                       ? 'text-white/80' 
                       : 'text-muted-foreground'
@@ -108,3 +116,7 @@ export function Sidebar({ activeTab, setActiveTab }) {
   )
 }
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 289c02e702defbe198c2460edef27ea764f648ed
