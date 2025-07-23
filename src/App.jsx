@@ -1,49 +1,13 @@
-<<<<<<< HEAD
-import { useState } from 'react'
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
-import { Sidebar } from '@/components/Sidebar'
-import { ContentRequest } from '@/components/ContentRequest'
-import { ContentReview } from '@/components/ContentReview'
-import { Analytics } from '@/components/Analytics'
-import { Suggestions } from '@/components/Suggestions'
-import { QuickActions } from '@/components/QuickActions'
-import './App.css'
-
-function App() {
-  const [activeTab, setActiveTab] = useState('quick-actions')
-
-  return (
-    <Router>
-      <div className="flex h-screen bg-background">
-        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-        <main className="flex-1 overflow-auto">
-          <div className="p-6">
-            {activeTab === 'quick-actions' && <QuickActions />}
-            {activeTab === 'request' && <ContentRequest />}
-            {activeTab === 'review' && <ContentReview />}
-            {activeTab === 'analytics' && <Analytics />}
-            {activeTab === 'suggestions' && <Suggestions />}
-          </div>
-        </main>
-      </div>
-    </Router>
-  )
-}
-
-export default App
-
-=======
 import { useState } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { Auth } from './components/Auth'; // Assuming Auth.jsx is in components
+import { Auth } from './components/Auth';
 import ContentRequest from './components/ContentRequest';
- // Your content request form
-import './index.css'; // IMPORTANT: Ensure your main CSS file is imported here
-import './index.css';
-// Main App component that handles routing and layout
+import './index.css'; // main stylesheet
+
+// The inner dashboard/content switcher
 const AppContent = () => {
   const { user, loading } = useAuth();
-  const [activeSection, setActiveSection] = useState('request-content'); // Default section
+  const [activeSection, setActiveSection] = useState('request-content');
 
   if (loading) {
     return (
@@ -54,10 +18,9 @@ const AppContent = () => {
   }
 
   if (!user) {
-    return <Auth />; // Show authentication component if not logged in
+    return <Auth />;
   }
 
-  // If logged in, show the dashboard
   return (
     <div className="flex min-h-screen bg-gray-100">
       {/* Sidebar */}
@@ -65,108 +28,56 @@ const AppContent = () => {
         <div className="text-2xl font-bold mb-8">YouNifAiEd Dashboard</div>
         <nav className="flex-grow">
           <ul>
-            <li className="mb-4">
-              <button
-                onClick={() => setActiveSection('request-content')}
-                className={`w-full text-left py-2 px-4 rounded-md ${
-                  activeSection === 'request-content' ? 'bg-blue-600' : 'hover:bg-gray-700'
-                }`}
-              >
-                Request Content
-              </button>
-            </li>
-            <li className="mb-4">
-              <button
-                onClick={() => setActiveSection('content-library')}
-                className={`w-full text-left py-2 px-4 rounded-md ${
-                  activeSection === 'content-library' ? 'bg-blue-600' : 'hover:bg-gray-700'
-                }`}
-              >
-                Content Library
-              </button>
-            </li>
-            <li className="mb-4">
-              <button
-                onClick={() => setActiveSection('analytics')}
-                className={`w-full text-left py-2 px-4 rounded-md ${
-                  activeSection === 'analytics' ? 'bg-blue-600' : 'hover:bg-gray-700'
-                }`}
-              >
-                Analytics
-              </button>
-            </li>
-            <li className="mb-4">
-              <button
-                onClick={() => setActiveSection('workflows')}
-                className={`w-full text-left py-2 px-4 rounded-md ${
-                  activeSection === 'workflows' ? 'bg-blue-600' : 'hover:bg-gray-700'
-                }`}
-              >
-                Workflows
-              </button>
-            </li>
-            <li className="mb-4">
-              <button
-                onClick={() => setActiveSection('settings')}
-                className={`w-full text-left py-2 px-4 rounded-md ${
-                  activeSection === 'settings' ? 'bg-blue-600' : 'hover:bg-gray-700'
-                }`}
-              >
-                Settings
-              </button>
-            </li>
-            {/* Admin Tools Section */}
+            {[
+              { key: 'request-content', label: 'Request Content' },
+              { key: 'content-library', label: 'Content Library' },
+              { key: 'analytics', label: 'Analytics' },
+              { key: 'workflows', label: 'Workflows' },
+              { key: 'settings', label: 'Settings' },
+            ].map(({ key, label }) => (
+              <li key={key} className="mb-4">
+                <button
+                  onClick={() => setActiveSection(key)}
+                  className={`w-full text-left py-2 px-4 rounded-md ${
+                    activeSection === key ? 'bg-blue-600' : 'hover:bg-gray-700'
+                  }`}
+                >
+                  {label}
+                </button>
+              </li>
+            ))}
+
+            {/* Admin Tools */}
             <li className="mt-8">
-              <div className="text-sm font-semibold text-gray-400 uppercase mb-2">Admin Tools</div>
-              <ul>
-                <li className="mb-2">
+              <div className="text-sm font-semibold text-gray-400 uppercase mb-2">
+                Admin Tools
+              </div>
+              {[
+                { key: 'user-management', label: 'User Management' },
+                { key: 'api-keys', label: 'API Keys' },
+                { key: 'database-admin', label: 'Database Admin' },
+                { key: 'system-logs', label: 'System Logs' },
+              ].map(({ key, label }) => (
+                <li key={key} className="mb-2">
                   <button
-                    onClick={() => setActiveSection('user-management')}
+                    onClick={() => setActiveSection(key)}
                     className={`w-full text-left py-2 px-4 rounded-md ${
-                      activeSection === 'user-management' ? 'bg-blue-600' : 'hover:bg-gray-700'
+                      activeSection === key ? 'bg-blue-600' : 'hover:bg-gray-700'
                     }`}
                   >
-                    User Management
+                    {label}
                   </button>
                 </li>
-                <li className="mb-2">
-                  <button
-                    onClick={() => setActiveSection('api-keys')}
-                    className={`w-full text-left py-2 px-4 rounded-md ${
-                      activeSection === 'api-keys' ? 'bg-blue-600' : 'hover:bg-gray-700'
-                    }`}
-                  >
-                    API Keys
-                  </button>
-                </li>
-                <li className="mb-2">
-                  <button
-                    onClick={() => setActiveSection('database-admin')}
-                    className={`w-full text-left py-2 px-4 rounded-md ${
-                      activeSection === 'database-admin' ? 'bg-blue-600' : 'hover:bg-gray-700'
-                    }`}
-                  >
-                    Database Admin
-                  </button>
-                </li>
-                <li className="mb-2">
-                  <button
-                    onClick={() => setActiveSection('system-logs')}
-                    className={`w-full text-left py-2 px-4 rounded-md ${
-                      activeSection === 'system-logs' ? 'bg-blue-600' : 'hover:bg-gray-700'
-                    }`}
-                  >
-                    System Logs
-                  </button>
-                </li>
-              </ul>
+              ))}
             </li>
           </ul>
         </nav>
+
+        {/* Footer */}
         <div className="mt-auto pt-4 border-t border-gray-700">
           <div className="text-sm text-gray-400 mb-2">Logged in as:</div>
           <div className="font-semibold">{user.email}</div>
-          <div className="text-xs text-gray-500 mb-4">Admin User</div> {/* Admin badge */}
+          <div className="text-xs text-gray-500 mb-4">Admin User</div>
           <button
             onClick={useAuth().signOut}
             className="w-full text-left py-2 px-4 rounded-md bg-red-600 hover:bg-red-700"
@@ -180,28 +91,44 @@ const AppContent = () => {
       <main className="flex-grow p-8">
         {activeSection === 'request-content' && <ContentRequest />}
         {activeSection === 'content-library' && (
-          <h2 className="text-2xl font-bold text-gray-800">Content Library (Coming Soon!)</h2>
+          <h2 className="text-2xl font-bold text-gray-800">
+            Content Library (Coming Soon!)
+          </h2>
         )}
         {activeSection === 'analytics' && (
-          <h2 className="text-2xl font-bold text-gray-800">Analytics (Coming Soon!)</h2>
+          <h2 className="text-2xl font-bold text-gray-800">
+            Analytics (Coming Soon!)
+          </h2>
         )}
         {activeSection === 'workflows' && (
-          <h2 className="text-2xl font-bold text-gray-800">Workflows (Coming Soon!)</h2>
+          <h2 className="text-2xl font-bold text-gray-800">
+            Workflows (Coming Soon!)
+          </h2>
         )}
         {activeSection === 'settings' && (
-          <h2 className="text-2xl font-bold text-gray-800">Settings (Coming Soon!)</h2>
+          <h2 className="text-2xl font-bold text-gray-800">
+            Settings (Coming Soon!)
+          </h2>
         )}
         {activeSection === 'user-management' && (
-          <h2 className="text-2xl font-bold text-gray-800">User Management (Coming Soon!)</h2>
+          <h2 className="text-2xl font-bold text-gray-800">
+            User Management (Coming Soon!)
+          </h2>
         )}
         {activeSection === 'api-keys' && (
-          <h2 className="text-2xl font-bold text-gray-800">API Keys (Coming Soon!)</h2>
+          <h2 className="text-2xl font-bold text-gray-800">
+            API Keys (Coming Soon!)
+          </h2>
         )}
         {activeSection === 'database-admin' && (
-          <h2 className="text-2xl font-bold text-gray-800">Database Admin (Coming Soon!)</h2>
+          <h2 className="text-2xl font-bold text-gray-800">
+            Database Admin (Coming Soon!)
+          </h2>
         )}
         {activeSection === 'system-logs' && (
-          <h2 className="text-2xl font-bold text-gray-800">System Logs (Coming Soon!)</h2>
+          <h2 className="text-2xl font-bold text-gray-800">
+            System Logs (Coming Soon!)
+          </h2>
         )}
       </main>
     </div>
@@ -209,13 +136,10 @@ const AppContent = () => {
 };
 
 // Root App component wrapped with AuthProvider
-const App = () => {
-  return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
-  );
-};
+const App = () => (
+  <AuthProvider>
+    <AppContent />
+  </AuthProvider>
+);
 
 export default App;
->>>>>>> 289c02e702defbe198c2460edef27ea764f648ed
