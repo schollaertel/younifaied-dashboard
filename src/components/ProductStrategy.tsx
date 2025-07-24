@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Monitor, Clock, Megaphone, QrCode, Settings, Users, Plus } from "lucide-react";
+import { Monitor, Clock, Megaphone, QrCode, Settings, Plus } from "lucide-react";
 
 export const ProductStrategy = () => {
   const features = [
@@ -36,82 +36,62 @@ export const ProductStrategy = () => {
       color: "secondary"
     },
     {
-      icon: Users,
+      icon: Plus,
       title: "Roster Integration (Breakthrough)",
       description: "Player-level tracking with goals, assists, penalties tied to specific players",
-      color: "accent"
+      color: "warning"
     }
   ];
 
   const pricingTiers = [
     {
-      name: "Free",
-      price: "$0",
-      fields: "1 scoreboard (limited hours)",
+      name: "Basic",
+      price: "$49",
+      period: "per month",
+      description: "Perfect for single venue operations",
       features: [
-        "Basic scoreboard functionality",
-        "ClockSynk affiliate advertising",
-        "QR code spectator access",
+        "Up to 2 scoreboards",
+        "Basic analytics",
+        "QR code access",
         "Email support",
         "Standard templates"
       ],
-      target: "Lead generation & sales pipeline",
-      highlight: false
-    },
-    {
-      name: "Starter",
-      price: "$49",
-      fields: "Up to 2 scoreboards",
-      features: [
-        "All Free features",
-        "Remove ClockSynk branding",
-        "Basic analytics",
-        "Priority email support",
-        "Custom team colors"
-      ],
-      target: "Single venue operations",
-      highlight: false
+      color: "secondary",
+      popular: false
     },
     {
       name: "Professional",
       price: "$149",
-      fields: "Up to 10 scoreboards",
+      period: "per month",
+      description: "Ideal for multi-venue leagues",
       features: [
-        "All Starter features",
+        "Up to 10 scoreboards",
         "Advanced analytics",
         "Custom branding",
-        "Tournament management",
-        "Sponsor ad management",
         "Priority support",
-        "Player performance data"
+        "Tournament management",
+        "Sponsor ad management"
       ],
-      target: "Multi-venue leagues",
-      highlight: true
+      color: "primary",
+      popular: true
     },
     {
       name: "Enterprise",
       price: "$999",
-      fields: "Unlimited scoreboards",
+      period: "per month",
+      description: "For large organizations and tournaments",
       features: [
-        "All Professional features",
+        "Unlimited scoreboards",
         "White-label solution",
         "API access",
         "Dedicated support",
         "Custom integrations",
         "Advanced reporting",
-        "Data licensing opportunities"
+        "Player performance data"
       ],
-      target: "Large organizations & tournaments",
-      highlight: false
+      color: "accent",
+      popular: false
     }
-  ];
-
-  const addOns = [
-    "Additional scoreboards ($15/week or $39/month)",
-    "Advanced advertising slots ($19.99/month)",
-    "Penalty tracking enhancements ($9.99/month)",
-    "Professional appearance upgrades ($14.99/month)",
-    "Custom integrations ($29.99/month)"
   ];
 
   return (
@@ -133,8 +113,8 @@ export const ProductStrategy = () => {
             <TabsTrigger value="roadmap">Development Roadmap</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="features" className="space-y-8">
-            <Card className="bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20">
+          <TabsContent value="features" className="space-y-6">
+            <Card>
               <CardHeader>
                 <CardTitle className="text-2xl text-center">Phase 1: Core Features (Months 1-6)</CardTitle>
               </CardHeader>
@@ -143,23 +123,19 @@ export const ProductStrategy = () => {
                   {features.map((feature, index) => {
                     const IconComponent = feature.icon;
                     return (
-                      <div key={index} className="text-center p-6 rounded-lg bg-background border">
-                        <div className={`inline-flex p-3 rounded-full mb-4 ${
-                          feature.color === 'secondary' ? 'bg-secondary/10' :
-                          feature.color === 'accent' ? 'bg-accent/10' :
-                          feature.color === 'warning' ? 'bg-warning/10' :
-                          'bg-primary/10'
-                        }`}>
-                          <IconComponent className={`w-6 h-6 ${
-                            feature.color === 'secondary' ? 'text-secondary' :
-                            feature.color === 'accent' ? 'text-accent' :
-                            feature.color === 'warning' ? 'text-warning' :
-                            'text-primary'
-                          }`} />
-                        </div>
-                        <h3 className="font-semibold mb-2">{feature.title}</h3>
-                        <p className="text-sm text-muted-foreground">{feature.description}</p>
-                      </div>
+                      <Card key={index} className={`border-l-4 border-l-${feature.color} hover:shadow-lg transition-all duration-300`}>
+                        <CardHeader className="pb-3">
+                          <div className="flex items-center gap-3">
+                            <div className={`p-2 bg-${feature.color}/10 rounded-lg`}>
+                              <IconComponent className={`w-6 h-6 text-${feature.color}`} />
+                            </div>
+                            <CardTitle className="text-lg">{feature.title}</CardTitle>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-muted-foreground">{feature.description}</p>
+                        </CardContent>
+                      </Card>
                     );
                   })}
                 </div>
@@ -167,138 +143,103 @@ export const ProductStrategy = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="pricing" className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <TabsContent value="pricing" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {pricingTiers.map((tier, index) => (
-                <Card key={index} className={`relative ${
-                  tier.highlight 
-                    ? 'ring-2 ring-primary shadow-lg scale-105' 
-                    : 'hover:shadow-md transition-shadow'
-                }`}>
-                  {tier.highlight && (
-                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                      <Badge className="bg-primary text-primary-foreground">Most Popular</Badge>
-                    </div>
+                <Card key={index} className={`relative ${tier.popular ? 'ring-2 ring-primary shadow-lg scale-105' : ''} hover:shadow-lg transition-all duration-300`}>
+                  {tier.popular && (
+                    <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground">
+                      Most Popular
+                    </Badge>
                   )}
                   <CardHeader className="text-center pb-4">
-                    <CardTitle className="text-xl">{tier.name}</CardTitle>
-                    <div className="text-3xl font-bold text-primary mb-2">
-                      {tier.price}{tier.name !== "Free" && <span className="text-sm text-muted-foreground">/month</span>}
+                    <CardTitle className="text-2xl text-primary">{tier.name}</CardTitle>
+                    <div className="text-4xl font-bold text-foreground">
+                      {tier.price}
+                      <span className="text-lg font-normal text-muted-foreground">/{tier.period}</span>
                     </div>
-                    <Badge variant="outline">{tier.fields}</Badge>
+                    <p className="text-muted-foreground">{tier.description}</p>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <h4 className="font-semibold text-sm mb-2">Features:</h4>
-                      <ul className="space-y-1">
-                        {tier.features.map((feature, featureIndex) => (
-                          <li key={featureIndex} className="text-sm text-muted-foreground flex items-center gap-2">
-                            <div className="w-1.5 h-1.5 bg-secondary rounded-full flex-shrink-0"></div>
-                            {feature}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div className="pt-4 border-t">
-                      <p className="text-sm font-medium">Target: {tier.target}</p>
-                    </div>
+                  <CardContent>
+                    <ul className="space-y-3">
+                      {tier.features.map((feature, featureIndex) => (
+                        <li key={featureIndex} className="flex items-center gap-2">
+                          <div className={`w-2 h-2 bg-${tier.color} rounded-full`}></div>
+                          <span className="text-sm">{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </CardContent>
                 </Card>
               ))}
             </div>
-
-            <Card className="bg-gradient-to-br from-secondary/10 to-accent/10 border-secondary/30">
-              <CardHeader>
-                <CardTitle className="text-xl flex items-center gap-2">
-                  <Plus className="w-6 h-6 text-primary" />
-                  In-App Purchase Add-Ons
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {addOns.map((addon, index) => (
-                    <div key={index} className="flex items-center gap-3 p-3 rounded-lg bg-background/50">
-                      <div className="w-2 h-2 bg-accent rounded-full flex-shrink-0"></div>
-                      <span className="text-sm">{addon}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-6 p-4 bg-primary/10 rounded-lg border border-primary/20">
-                  <h4 className="font-semibold text-primary mb-2">Free Tier Strategy</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Free users see ClockSynk affiliate advertising, generating leads for our sales team to convert to custom sponsor ads. 
-                    This creates a pipeline from every signup while providing value to users.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
           </TabsContent>
 
           <TabsContent value="roadmap" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="bg-gradient-to-br from-secondary/10 to-secondary/5 border-secondary/30">
+              <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/30">
                 <CardHeader>
-                  <CardTitle className="text-lg">Phase 1: MVP Foundation</CardTitle>
-                  <Badge variant="secondary">Months 1-6</Badge>
+                  <CardTitle className="text-lg">Phase 1 (Months 1-6)</CardTitle>
+                  <Badge variant="outline" className="border-primary text-primary">MVP Foundation</Badge>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-secondary rounded-full"></div>
-                    <span className="text-sm">Professional scoreboard platform</span>
+                    <div className="w-2 h-2 bg-primary rounded-full"></div>
+                    <span className="text-sm">Professional scoreboards</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-secondary rounded-full"></div>
-                    <span className="text-sm">Real-time sync & QR access</span>
+                    <div className="w-2 h-2 bg-primary rounded-full"></div>
+                    <span className="text-sm">QR code spectator access</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-secondary rounded-full"></div>
-                    <span className="text-sm">Basic roster integration</span>
+                    <div className="w-2 h-2 bg-primary rounded-full"></div>
+                    <span className="text-sm">Roster integration system</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-secondary rounded-full"></div>
-                    <span className="text-sm">Affiliate advertising system</span>
+                    <div className="w-2 h-2 bg-primary rounded-full"></div>
+                    <span className="text-sm">Sponsor advertising platform</span>
                   </div>
                 </CardContent>
               </Card>
 
               <Card className="bg-gradient-to-br from-accent/10 to-accent/5 border-accent/30">
                 <CardHeader>
-                  <CardTitle className="text-lg">Phase 2: Tournament Platform</CardTitle>
-                  <Badge variant="outline">Months 7-18</Badge>
+                  <CardTitle className="text-lg">Phase 2 (Months 7-18)</CardTitle>
+                  <Badge variant="outline" className="border-accent text-accent">Tournament Platform</Badge>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 bg-accent rounded-full"></div>
-                    <span className="text-sm">Tournament management system</span>
+                    <span className="text-sm">Tournament management</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 bg-accent rounded-full"></div>
-                    <span className="text-sm">Player performance data collection</span>
+                    <span className="text-sm">Player performance data licensing</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 bg-accent rounded-full"></div>
-                    <span className="text-sm">Recruiting data licensing</span>
+                    <span className="text-sm">Recruiter dashboard access</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 bg-accent rounded-full"></div>
-                    <span className="text-sm">Advanced analytics dashboard</span>
+                    <span className="text-sm">Cross-tournament analytics</span>
                   </div>
                 </CardContent>
               </Card>
 
               <Card className="bg-gradient-to-br from-warning/10 to-warning/5 border-warning/30">
                 <CardHeader>
-                  <CardTitle className="text-lg">Phase 3: AI Intelligence</CardTitle>
-                  <Badge variant="outline">Months 18-36</Badge>
+                  <CardTitle className="text-lg">Phase 3 (Months 18-36)</CardTitle>
+                  <Badge variant="outline" className="border-warning text-warning">AI Intelligence</Badge>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 bg-warning rounded-full"></div>
-                    <span className="text-sm">AI coaching recommendations</span>
+                    <span className="text-sm">AI coaching agents</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 bg-warning rounded-full"></div>
-                    <span className="text-sm">Player development tracking</span>
+                    <span className="text-sm">Player development insights</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 bg-warning rounded-full"></div>
@@ -306,7 +247,7 @@ export const ProductStrategy = () => {
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 bg-warning rounded-full"></div>
-                    <span className="text-sm">Strategic acquisition readiness</span>
+                    <span className="text-sm">Enterprise licensing</span>
                   </div>
                 </CardContent>
               </Card>
